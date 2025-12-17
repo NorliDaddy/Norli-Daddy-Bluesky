@@ -373,13 +373,21 @@ def post_to_bluesky(review_text, book_data=None):
         # Split review into chunks for thread (max 3 posts)
         chunks = []
         
-        # Split by paragraphs first
-        paragraphs = [p.strip() for p in review_text.split('\n') if p.strip()]
+        # Split by double newlines to get paragraphs
+        paragraphs = [p.strip() for p in review_text.split('\n\n') if p.strip()]
+        
+        # If we only have 1 or 2 paragraphs, split by sentences or words
+        if len(paragraphs) <= 2:
+            # Try splitting by '. ' for sentences
+            sentences = []
+            for para in paragraphs:
+                sentences.extend([s.strip() + '.' for s in para.split('. ') if s.strip()])
+            paragraphs = sentences
         
         current_chunk = ""
         for paragraph in paragraphs:
-            # If adding this paragraph exceeds limit or we have 2 chunks already
-            if len(chunks) >= max_posts - 1:  # Reserve last post for link
+            # Reserve last post for book link
+            if len(chunks) >= max_posts - 1:
                 # Add remaining to current chunk or create new
                 if current_chunk:
                     chunks.append(current_chunk.strip())
@@ -390,18 +398,37 @@ def post_to_bluesky(review_text, book_data=None):
                     remaining = remaining[:max_length-3] + "..."
                 chunks.append(remaining)
                 break
-            elif len(current_chunk) + len(paragraph) + 2 <= max_length:
-                current_chunk += paragraph + "\n\n"
+            elif len(current_chunk) + len(paragraph) + 3 <= max_length:
+                if current_chunk:
+                    current_chunk += "  \n" + paragraph
+                else:
+                    current_chunk = paragraph
             else:
                 if current_chunk:
                     chunks.append(current_chunk.strip())
-                current_chunk = paragraph + "\n\n"
+                # Check if paragraph itself is too long
+                if len(paragraph) > max_length:
+                    # Split at word boundary
+                    truncate_at = paragraph[:max_length-3].rfind(' ')
+                    if truncate_at == -1:
+                        truncate_at = max_length - 3
+                    current_chunk = paragraph[:truncate_at] + "..."
+                else:
+                    current_chunk = paragraph
         
         if current_chunk and len(chunks) < max_posts - 1:
             chunks.append(current_chunk.strip())
         
         # Ensure we don't exceed max_posts for review
         chunks = chunks[:max_posts - 1]
+        
+        # Final safety check: truncate any chunk over max_length
+        for i in range(len(chunks)):
+            if len(chunks[i]) > max_length:
+                truncate_at = chunks[i][:max_length-3].rfind(' ')
+                if truncate_at == -1:
+                    truncate_at = max_length - 3
+                chunks[i] = chunks[i][:truncate_at] + "..."
         
         # Add book link as final post
         book_link_text = f"📚 Les mer: {book_data.get('url', '')}" if book_data else ""
