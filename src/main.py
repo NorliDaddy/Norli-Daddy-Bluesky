@@ -385,11 +385,30 @@ def post_to_bluesky(review_text, book_data=None):
             # Multi-post thread
             logging.info(f"Review is {len(review_text)} chars, creating thread...")
             
-            # Split into chunks
+            # Split into chunks - handle both paragraphs and word boundaries
             chunks = []
             current_chunk = ""
             
-            for paragraph in review_text.split('\n'):
+            # First try to split by paragraphs
+            paragraphs = review_text.split('\n')
+            
+            for paragraph in paragraphs:
+                # If single paragraph is too long, split it by sentences or words
+                if len(paragraph) > max_length:
+                    # Split long paragraph into words
+                    words = paragraph.split(' ')
+                    temp_chunk = ""
+                    for word in words:
+                        if len(temp_chunk) + len(word) + 1 <= max_length:
+                            temp_chunk += word + ' '
+                        else:
+                            if temp_chunk:
+                                chunks.append(temp_chunk.strip())
+                            temp_chunk = word + ' '
+                    if temp_chunk:
+                        paragraph = temp_chunk.strip()
+                
+                # Now add paragraph to current chunk
                 if len(current_chunk) + len(paragraph) + 1 <= max_length:
                     current_chunk += paragraph + '\n'
                 else:
