@@ -1,18 +1,19 @@
 [tool.poetry]
-name = "bsky-bot"
+name = "norli-book-daddy-bot"
 version = "1.0.0"
-description = "A Bluesky bot implemented in Python to find yellow cars on traffic cameras."
+description = "A Bluesky bot that generates flirty book reviews from Norli.no using GPT-4o."
 authors = ["Turbolego <turbolego@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-keywords = ["bsky", "bluesky", "atproto", "bot", "python"]
+keywords = ["bsky", "bluesky", "atproto", "bot", "python", "books", "ai", "gpt4o"]
 
 [tool.poetry.dependencies]
 python = ">=3.11"
 requests = "*"
 python-dotenv = "*"
 atproto = "*"
-Pillow = "*"
+beautifulsoup4 = "*"
+lxml = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

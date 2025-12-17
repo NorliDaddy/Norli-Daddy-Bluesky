@@ -1,6 +1,7 @@
 requests
 python-dotenv
 atproto
-Pillow
-transformers
-scipy
+beautifulsoup4
+lxml
+selenium
+webdriver-manager

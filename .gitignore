@@ -79,6 +79,22 @@ web_modules/
 .env.production.local
 .env.local
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache

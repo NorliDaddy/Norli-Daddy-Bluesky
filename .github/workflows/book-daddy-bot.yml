@@ -1,0 +1,42 @@
+name: Norli Book Daddy Bot
+
+on:
+  schedule:
+    # Run daily at 10:00 AM UTC (11:00 AM CET, 12:00 PM CEST)
+    - cron: '0 10 * * *'
+  workflow_dispatch:  # Allow manual triggers
+
+jobs:
+  post-book-review:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run Norli Book Daddy Bot
+        env:
+          KEY_GITHUB_TOKEN: ${{ secrets.KEY_GITHUB_TOKEN }}
+          BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
+          BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD }}
+        run: |
+          python src/main.py
+      
+      - name: Commit and push state file
+        run: |
+          git config --global user.name "Book Daddy Bot"
+          git config --global user.email "bot@bookdaddy.com"
+          git add book_state.json || true
+          git commit -m "Update book state [skip ci]" || echo "No changes to commit"
+          git push || echo "Nothing to push"

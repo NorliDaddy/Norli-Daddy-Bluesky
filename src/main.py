@@ -1,629 +1,587 @@
 #!/usr/bin/env python3
 """
-Yellow Car Detection Bot with Hugging Face OWLv2 Fallback
-This version includes Hugging Face OWLv2 as fallback when GitHub Models API is rate limited.
+Norli Book Daddy Bot - Flirty Book Reviews for Bluesky
+Scrapes Norli.no for new books, generates sexy book reviews using GPT-4o, and posts to Bluesky.
 """
 
-import base64
 import json
 import logging
 import os
 import random
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
-from PIL import Image
+from bs4 import BeautifulSoup
 from atproto import Client, models
 from dotenv import load_dotenv
-import torch
-from transformers import Owlv2Processor, Owlv2ForObjectDetection
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
 
 load_dotenv()
 
-TOKEN = os.getenv("KEY_GITHUB_TOKEN")
-HF_API_TOKEN = os.getenv("HF_API_TOKEN")
-ENDPOINT = "https://models.inference.ai.azure.com"
+# API Configuration
+API_KEY = os.getenv("KEY_GITHUB_TOKEN")  # Azure OpenAI via GitHub Models
+API_ENDPOINT = "https://models.inference.ai.azure.com/chat/completions"
 MODEL_NAME = "gpt-4o"
 
-OWL_V2_MODEL_ID = "google/owlv2-base-patch16-ensemble"
-
-TODAY_FOLDER = Path("today")
-TODAY_FOLDER.mkdir(exist_ok=True)
-WEBCAM_URLS_FILE = Path("valid_webcam_ids.txt")
-SHUFFLE_STATE_FILE = Path("shuffle_state.json")
+# Bluesky Configuration
 BSKY_HANDLE = os.getenv("BSKY_HANDLE")
 BSKY_PASSWORD = os.getenv("BSKY_PASSWORD")
 
-MAX_RUNTIME_MINUTES = 20
-IMAGES_PER_SESSION = 30
-YELLOW_THRESHOLD = 150
-MIN_CLUSTER_SIZE = 120
+# URLs
+NORLI_NEW_BOOKS_URL = "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter"
+
+# State management
+STATE_FILE = Path("book_state.json")
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Global variables for OWLv2 model (load once)
-owl_processor = None
-owl_model = None
-# Global variable to track if Azure is rate limited
-azure_rate_limited = False
 
-
-class RateLimitException(Exception):
-    pass
-
-
-def load_owlv2_model():
-    """Load OWLv2 model and processor once at startup"""
-    global owl_processor, owl_model
+def get_selenium_driver():
+    """Create a headless Selenium Chrome driver"""
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--window-size=1920,1080')
+    chrome_options.add_argument('user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
     
-    if owl_processor is not None and owl_model is not None:
-        return True
-        
-    if not HF_API_TOKEN:
-        logging.error("Hugging Face API token is not defined for OWLv2.")
-        return False
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    return driver
+
+
+def scrape_book_list():
+    """Scrape the list of new books from Norli.no using Selenium (JavaScript rendering)"""
+    logging.info(f"Fetching book list from {NORLI_NEW_BOOKS_URL}")
     
+    driver = None
     try:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        logging.info(f"Loading OWLv2 model on device: {device}")
+        driver = get_selenium_driver()
+        driver.get(NORLI_NEW_BOOKS_URL)
         
-        owl_processor = Owlv2Processor.from_pretrained(OWL_V2_MODEL_ID)
-        owl_model = Owlv2ForObjectDetection.from_pretrained(OWL_V2_MODEL_ID).to(device)
+        # Wait for content to load (adjust selector as needed)
+        time.sleep(5)  # Give React time to render
         
-        logging.info("✅ OWLv2 model loaded successfully")
-        return True
+        # Get page source after JavaScript execution
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        
+        # Find all book links
+        book_links = []
+        
+        # Try multiple possible selectors
+        for selector in [
+            'a[href*="/boker/"]',
+            '.product-item a',
+            '.book-item a',
+            'article a[href*="/boker/"]',
+            '[data-testid*="product"] a',
+            '.ProductItem a'
+        ]:
+            elements = soup.select(selector)
+            if elements:
+                for link in elements:
+                    href = link.get('href')
+                    if href and '/boker/' in href and '-978' in href:  # ISBN pattern
+                        # Make absolute URL
+                        if href.startswith('/'):
+                            href = f"https://www.norli.no{href}"
+                        if href not in book_links:
+                            book_links.append(href)
+        
+        # Remove duplicates
+        book_links = list(set(book_links))
+        
+        logging.info(f"Found {len(book_links)} book URLs")
+        return book_links
+        
     except Exception as e:
-        logging.error(f"Failed to load OWLv2 model or processor: {e}")
-        return False
+        logging.error(f"Error scraping book list: {e}")
+        return []
+    finally:
+        if driver:
+            driver.quit()
 
 
-def load_shuffle_state():
-    if SHUFFLE_STATE_FILE.exists():
-        try:
-            with open(SHUFFLE_STATE_FILE, 'r') as f:
-                state = json.load(f)
-                if not isinstance(state.get("shuffled_urls"), list):
-                    return {"shuffled_urls": [], "current_index": 0, "stats": {"total_processed": 0, "total_posted": 0}}
-                return state
-        except Exception as e:
-            logging.warning(f"Could not load shuffle state: {e}")
-    return {"shuffled_urls": [], "current_index": 0, "stats": {"total_processed": 0, "total_posted": 0}}
-
-
-def save_shuffle_state(state):
+def scrape_book_details(book_url):
+    """Scrape detailed information about a specific book using Selenium"""
+    logging.info(f"Scraping book details from {book_url}")
+    
+    driver = None
     try:
-        with open(SHUFFLE_STATE_FILE, 'w') as f:
-            json.dump(state, f)
-    except Exception as e:
-        logging.error(f"Could not save shuffle state: {e}")
-
-
-def get_shuffled_urls():
-    if not WEBCAM_URLS_FILE.exists():
-        logging.error(f"Webcam URLs file not found: {WEBCAM_URLS_FILE}")
-        return [], 0, {}
-
-    with open(WEBCAM_URLS_FILE, "r") as f:
-        all_urls = [line.strip() for line in f if line.strip()]
-
-    state = load_shuffle_state()
-
-    if not state["shuffled_urls"] or state["current_index"] >= len(state["shuffled_urls"]):
-        logging.info(f"Shuffling {len(all_urls)} webcam URLs for fair processing")
-        state["shuffled_urls"] = all_urls.copy()
-        random.shuffle(state["shuffled_urls"])
-        state["current_index"] = 0
-        cycle_num = state.get("cycle_count", 0) + 1
-        state["cycle_count"] = cycle_num
-        save_shuffle_state(state)
-
-    return state["shuffled_urls"], state["current_index"], state.get("stats", {"total_processed": 0, "total_posted": 0})
-
-
-def update_shuffle_state(new_index, stats_update=None):
-    state = load_shuffle_state()
-    state["current_index"] = new_index
-    if stats_update:
-        if "stats" not in state:
-            state["stats"] = {"total_processed": 0, "total_posted": 0}
-        for key, value in stats_update.items():
-            state["stats"][key] = state["stats"].get(key, 0) + value
-    save_shuffle_state(state)
-
-
-def download_image(url, dest, timeout=10):
-    try:
-        resp = requests.get(url, allow_redirects=True, timeout=timeout)
-        if resp.status_code == 200:
-            with open(dest, "wb") as f:
-                f.write(resp.content)
-            return True
+        driver = get_selenium_driver()
+        driver.get(book_url)
+        
+        # Wait for content to load
+        time.sleep(5)  # Give React time to render
+        
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        
+        # Extract book information (adjust selectors based on actual Norli HTML)
+        book_data = {
+            'url': book_url,
+            'ean': '',
+            'title': '',
+            'author': '',
+            'year': '',
+            'language': '',
+            'description': '',
+            'reviews': '',
+            'image_url': ''
+        }
+        
+        # Extract EAN from URL (pattern: -9788202806453)
+        import re
+        ean_match = re.search(r'-(978\d{10})(?:\?|$)', book_url)
+        if ean_match:
+            book_data['ean'] = ean_match.group(1)
         else:
-            logging.debug(f"Failed to download {url}: Status {resp.status_code}")
-            return False
-    except Exception as e:
-        logging.debug(f"Exception downloading {url}: {e}")
-        return False
-
-
-def find_yellow_clusters(image_path, min_cluster_size=MIN_CLUSTER_SIZE):
-    try:
-        img = Image.open(image_path).convert('RGB')
-        pixels = img.load()
-        width, height = img.size
-        yellow_count = 0
+            logging.warning(f"Could not extract EAN from URL: {book_url}")
         
-        # Track yellow pixel positions to check for rectangular clustering
-        yellow_pixels = []
-
-        for y in range(0, height, 2):
-            for x in range(0, width, 2):
-                r, g, b = pixels[x, y]
-                if r > YELLOW_THRESHOLD and g > YELLOW_THRESHOLD and b < 100:
-                    yellow_count += 1
-                    yellow_pixels.append((x, y))
-                    
-                    # Early exit if we have enough pixels
-                    if yellow_count >= min_cluster_size:
-                        # Additional validation: check if yellow pixels form reasonable clusters
-                        # (not just scattered road markings)
-                        if len(yellow_pixels) >= min_cluster_size:
-                            # Check for clustered distribution (not just thin lines)
-                            x_coords = [p[0] for p in yellow_pixels[-min_cluster_size:]]
-                            y_coords = [p[1] for p in yellow_pixels[-min_cluster_size:]]
-                            
-                            x_range = max(x_coords) - min(x_coords)
-                            y_range = max(y_coords) - min(y_coords)
-                            
-                            # Require both width and height (not just thin lines)
-                            # Road markings are typically very thin in one dimension
-                            if x_range > 20 and y_range > 15:  # Minimum rectangular area
-                                logging.debug(f"Yellow cluster found: {yellow_count} pixels, dimensions: {x_range}x{y_range}")
-                                return True
-
-        # Final check with all pixels if we didn't early exit
-        if yellow_count >= min_cluster_size and len(yellow_pixels) >= min_cluster_size:
-            x_coords = [p[0] for p in yellow_pixels]
-            y_coords = [p[1] for p in yellow_pixels]
-            
-            x_range = max(x_coords) - min(x_coords)
-            y_range = max(y_coords) - min(y_coords)
-            
-            # Require rectangular distribution
-            if x_range > 20 and y_range > 15:
-                logging.debug(f"Final yellow cluster found: {yellow_count} pixels, dimensions: {x_range}x{y_range}")
-                return True
-            else:
-                logging.debug(f"Yellow pixels too linear: {yellow_count} pixels, dimensions: {x_range}x{y_range}")
-
-        return False
-    except Exception as e:
-        logging.debug(f"Error processing {image_path}: {e}")
-        return False
-
-
-def get_image_data_url(image_file, image_format, max_size=(800, 600), quality=85):
-    """
-    Get base64 data URL for image, with automatic resizing to avoid 413 errors
-    """
-    try:
-        # Open and potentially resize image
-        with Image.open(image_file) as img:
-            img = img.convert('RGB')
-            
-            # Check if image needs resizing
-            original_size = img.size
-            if img.size[0] > max_size[0] or img.size[1] > max_size[1]:
-                # Resize maintaining aspect ratio
-                img.thumbnail(max_size, Image.Resampling.LANCZOS)
-                logging.debug(f"Resized image from {original_size} to {img.size}")
-            
-            # Save to bytes with compression
-            import io
-            img_bytes = io.BytesIO()
-            img.save(img_bytes, format='JPEG', quality=quality, optimize=True)
-            img_bytes.seek(0)
-            
-            # Convert to base64
-            image_base64 = base64.b64encode(img_bytes.getvalue()).decode()
-            
-            # Log final size
-            final_size_kb = len(image_base64) * 3 / 4 / 1024  # Approximate KB
-            logging.debug(f"Final image payload: {final_size_kb:.1f} KB")
-            
-        return f"data:image/jpeg;base64,{image_base64}"
-    except Exception as e:
-        logging.error(f"Could not read/process '{image_file}': {e}")
-        return None
-
-
-def ask_owlv2_if_yellow_car(image_path):
-    """Strict OWLv2 fallback function that avoids false positives from road markings"""
-    global owl_processor, owl_model
-    
-    if owl_processor is None or owl_model is None:
-        if not load_owlv2_model():
-            return None
-
-    try:
-        image = Image.open(image_path).convert("RGB")
-    except Exception as e:
-        logging.error(f"Could not load image for OWLv2: {e}")
-        return None
-
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    
-    try:
-        # More specific queries to avoid road markings and other yellow objects
-        text_queries = [["a yellow car", "a yellow vehicle", "a yellow automobile", "a yellow taxi"]]
-        logging.info(f"Querying OWLv2 with multiple car-specific prompts")
-
-        inputs = owl_processor(text=text_queries, images=image, return_tensors="pt").to(device)
-
-        with torch.no_grad():
-            outputs = owl_model(**inputs)
-
-        target_sizes = torch.Tensor([image.size[::-1]])  # (H, W)
-
-        # Use higher threshold for initial filtering
-        results = owl_processor.post_process_object_detection(
-            outputs=outputs,
-            target_sizes=target_sizes,
-            threshold=0.25  # Increased from 0.1 to 0.25
-        )
-
-        # Strict validation: require high confidence AND reasonable bounding box
-        if len(results) > 0 and len(results[0]["boxes"]) > 0:
-            boxes = results[0]["boxes"]
-            scores = results[0]["scores"]
-            labels = results[0]["labels"]
-            
-            image_width, image_height = image.size
-            found_yellow_car = False
-            
-            for i, (box, score, label) in enumerate(zip(boxes, scores, labels)):
-                confidence = score.item()
+        # Try to extract title
+        title_selectors = ['h1', '.product-title', '.book-title', 'h1.title', '[data-testid="product-title"]']
+        for selector in title_selectors:
+            element = soup.select_one(selector)
+            if element:
+                book_data['title'] = element.get_text(strip=True)
+                if book_data['title']:
+                    break
+        
+        # Try to extract author
+        author_selectors = ['.author', '.product-author', 'span[itemprop="author"]', 'a[href*="/forfatter/"]', '[data-testid="author"]']
+        for selector in author_selectors:
+            element = soup.select_one(selector)
+            if element:
+                book_data['author'] = element.get_text(strip=True)
+                if book_data['author']:
+                    break
+        
+        # Try to extract publication year
+        year_selectors = ['.publication-year', '.year', 'span[itemprop="datePublished"]', '[data-testid="year"]']
+        for selector in year_selectors:
+            element = soup.select_one(selector)
+            if element:
+                text = element.get_text(strip=True)
+                # Extract 4-digit year
+                import re
+                year_match = re.search(r'\b(20\d{2}|19\d{2})\b', text)
+                if year_match:
+                    book_data['year'] = year_match.group(1)
+                    break
+        
+        # If no year found, try searching all text
+        if not book_data['year']:
+            import re
+            text = soup.get_text()
+            year_match = re.search(r'\b(202[0-9]|201[0-9])\b', text)
+            if year_match:
+                book_data['year'] = year_match.group(1)
+        
+        # Try to extract language
+        language_selectors = ['.language', 'span[itemprop="inLanguage"]', '[data-testid="language"]']
+        for selector in language_selectors:
+            element = soup.select_one(selector)
+            if element:
+                book_data['language'] = element.get_text(strip=True)
+                if book_data['language']:
+                    break
+        
+        # Default language if not found
+        if not book_data['language']:
+            book_data['language'] = 'Norwegian'
+        
+        # Try to extract description
+        desc_selectors = [
+            'section[class*="descriptionWrapper"] div[class*="richText"]',  # Norli specific
+            '.richText-root-SHY',  # Norli specific
+            'section[class*="descriptionWrapper"]',  # Norli specific
+            '.description', 
+            '.product-description', 
+            '[itemprop="description"]', 
+            '.book-description', 
+            '[data-testid="description"]'
+        ]
+        for selector in desc_selectors:
+            element = soup.select_one(selector)
+            if element:
+                # Get text from all <p> tags if they exist, otherwise get all text
+                paragraphs = element.find_all('p')
+                if paragraphs:
+                    book_data['description'] = ' '.join([p.get_text(strip=True) for p in paragraphs])
+                else:
+                    book_data['description'] = element.get_text(strip=True)
                 
-                # STRICT CONFIDENCE: Require very high confidence
-                if confidence < 0.35:  # Increased from 0.15 to 0.35
-                    continue
-                
-                # BOUNDING BOX VALIDATION: Check if box looks like a car
-                x1, y1, x2, y2 = box.tolist()
-                box_width = x2 - x1
-                box_height = y2 - y1
-                box_area = box_width * box_height
-                image_area = image_width * image_height
-                
-                # Box should be reasonable size (not tiny road markings, not entire image)
-                area_ratio = box_area / image_area
-                aspect_ratio = box_width / box_height if box_height > 0 else 0
-                
-                # Cars typically have aspect ratio between 1.2 and 3.0
-                # And should occupy reasonable portion of image (not tiny markings)
-                if (area_ratio < 0.005 or  # Too small (likely road marking)
-                    area_ratio > 0.8 or    # Too large (likely not a car)
-                    aspect_ratio < 0.8 or  # Too tall (not car-like)
-                    aspect_ratio > 4.0):   # Too wide (likely road marking)
-                    logging.debug(f"Rejected detection: area_ratio={area_ratio:.4f}, aspect_ratio={aspect_ratio:.2f}")
-                    continue
-                
-                # POSITION VALIDATION: Cars are usually not at very bottom (road markings area)
-                bottom_y_ratio = y2 / image_height
-                if bottom_y_ratio > 0.95:  # Very bottom of image (likely road marking)
-                    logging.debug(f"Rejected detection: too close to bottom edge")
-                    continue
-                
-                # If we get here, it's a high-confidence, well-positioned, car-shaped detection
-                label_text = text_queries[0][label.item()]
-                logging.info(f"🟡 HIGH-CONFIDENCE yellow car detected!")
-                logging.info(f"   Label: '{label_text}'")
-                logging.info(f"   Confidence: {confidence:.3f}")
-                logging.info(f"   Box area ratio: {area_ratio:.4f}")
-                logging.info(f"   Aspect ratio: {aspect_ratio:.2f}")
-                logging.info(f"   Position: ({x1:.0f},{y1:.0f}) to ({x2:.0f},{y2:.0f})")
-                
-                found_yellow_car = True
+                if len(book_data['description']) > 50:  # Make sure it's substantial
+                    break
+        
+        # Try to extract customer reviews
+        # Look for review sections
+        review_keywords = ['anmeldelse', 'reviews', 'omtale']
+        for keyword in review_keywords:
+            review_sections = soup.find_all(['div', 'section'], string=lambda t: t and keyword.lower() in t.lower())
+            if review_sections:
+                for section in review_sections:
+                    parent = section.find_parent(['div', 'section'])
+                    if parent:
+                        reviews_text = parent.get_text(separator='\n', strip=True)
+                        if len(reviews_text) > 100:  # Has substantial content
+                            book_data['reviews'] = reviews_text
+                            break
+                if book_data['reviews']:
+                    break
+        
+        # Also try direct review selectors
+        if not book_data['reviews']:
+            review_selectors = ['.reviews', '.customer-reviews', '.anmeldelser', '#reviews', '[data-testid="reviews"]']
+            for selector in review_selectors:
+                element = soup.select_one(selector)
+                if element:
+                    book_data['reviews'] = element.get_text(separator='\n', strip=True)
+                    if len(book_data['reviews']) > 50:
+                        break
+        
+        # Try to extract book cover image
+        image_selectors = [
+            '.carouselGallery-image-gHz[alt="image-product"]',  # Norli specific
+            'img[alt="image-product"]',
+            '.product-image img',
+            '[itemprop="image"]',
+            '.book-cover img'
+        ]
+        for selector in image_selectors:
+            img_elements = soup.select(selector)
+            for img in img_elements:
+                src = img.get('src', '')
+                # Look for the large image, not the placeholder or preview
+                if src and '/media/catalog/product/' in src and 'width=728' in src:
+                    # Make absolute URL if needed
+                    if src.startswith('/'):
+                        book_data['image_url'] = f"https://www.norli.no{src}"
+                    else:
+                        book_data['image_url'] = src
+                    break
+            if book_data['image_url']:
                 break
-            
-            if found_yellow_car:
-                logging.info(f"🟡 OWLv2 CONFIRMED yellow car with strict validation!")
-                return "yes"
-            else:
-                logging.info(f"🚫 OWLv2 detections failed strict validation (likely road markings/false positives)")
-                return "no"
-        else:
-            logging.info(f"🚫 OWLv2 found no yellow cars above threshold.")
-            return "no"
-            
+        
+        logging.info(f"Extracted book: {book_data['title']} by {book_data['author']}")
+        if book_data['image_url']:
+            logging.info(f"Found book cover image: {book_data['image_url']}")
+        return book_data
+        
     except Exception as e:
-        logging.error(f"Error in OWLv2 processing: {e}")
+        logging.error(f"Error scraping book details: {e}")
         return None
+    finally:
+        if driver:
+            driver.quit()
 
 
-def ask_ai_if_yellow_car(image_path):
-    global azure_rate_limited
-    fallback_triggered = False
+def generate_book_review(book_data):
+    """Generate a flirty 'book daddy' review using GPT-4o"""
+    logging.info(f"Generating review for {book_data['title']}")
     
-    # Check if Azure is already rate limited
-    if azure_rate_limited:
-        logging.info("🔄 Azure previously rate limited - using OWLv2 fallback directly")
-        fallback_triggered = True
-        return ask_owlv2_if_yellow_car(image_path), fallback_triggered
+    if not API_KEY:
+        logging.error("API key (KEY_GITHUB_TOKEN) not defined")
+        return None
     
-    if not TOKEN:
-        logging.error("Azure API token is not defined")
-        fallback_triggered = True
-        return ask_owlv2_if_yellow_car(image_path), fallback_triggered
+    # Build the prompt
+    prompt = f"""write a book review as a "book daddy" in a flirty tone, very sexy and funny, in norwegian
 
-    image_data_url = get_image_data_url(image_path, "jpg", max_size=(800, 600), quality=85)
-    if not image_data_url:
-        return None, fallback_triggered
-
+Book title: '{book_data['title']}'
+Author: '{book_data['author']}'
+Year: '{book_data['year']}'
+Language: '{book_data['language']}'
+Description: {book_data['description']}
+Customer reviews: {book_data['reviews']}"""
+    
     headers = {
-        "Authorization": f"Bearer {TOKEN}",
+        "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json"
     }
+    
     body = {
+        "model": MODEL_NAME,
         "messages": [
             {
                 "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": "Does this image show a yellow car? Answer with only 'yes' or 'no'."
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": image_data_url,
-                            "detail": "low"  # Use low detail to reduce payload size
-                        }
-                    }
-                ]
+                "content": prompt
             }
         ],
-        "model": MODEL_NAME,
-        "max_tokens": 10
+        "max_tokens": 500,
+        "temperature": 0.9
     }
-
+    
     try:
-        resp = requests.post(f"{ENDPOINT}/chat/completions", json=body, headers=headers, timeout=30)
-
-        if resp.status_code == 413:
-            logging.warning("🚫 Payload too large (413) - trying with smaller image...")
-            # Try with much smaller image
-            smaller_image_url = get_image_data_url(image_path, "jpg", max_size=(400, 300), quality=70)
-            if smaller_image_url:
-                body["messages"][0]["content"][1]["image_url"]["url"] = smaller_image_url
-                resp = requests.post(f"{ENDPOINT}/chat/completions", json=body, headers=headers, timeout=30)
-                
-                if resp.status_code == 413:
-                    logging.error("Image still too large even after aggressive compression - switching to OWLv2")
-                    fallback_triggered = True
-                    return ask_owlv2_if_yellow_car(image_path), fallback_triggered
-                elif resp.status_code == 429:
-                    # Rate limited - mark Azure as unavailable and use fallback
-                    azure_rate_limited = True
-                    quota_remaining = resp.headers.get("x-ms-user-quota-remaining", "unknown")
-                    quota_resets_after = resp.headers.get("x-ms-user-quota-resets-after", "unknown")
-                    logging.warning("🚫 Rate limit hit (429) after resize - marking Azure as unavailable:")
-                    logging.warning(f"   Azure will be bypassed for remainder of session")
-                    logging.warning(f"   Quota remaining: {quota_remaining}")
-                    logging.warning(f"   Quota resets after: {quota_resets_after}")
-                    fallback_triggered = True
-                    return ask_owlv2_if_yellow_car(image_path), fallback_triggered
-                elif resp.status_code != 200:
-                    logging.error(f"Azure API error after resize: {resp.status_code}")
-                    fallback_triggered = True
-                    return ask_owlv2_if_yellow_car(image_path), fallback_triggered
-                else:
-                    # Success with smaller image
-                    data = resp.json()
-                    result = data["choices"][0]["message"]["content"].strip().lower()
-                    logging.info(f"✅ Azure AI response (resized): {result}")
-                    return result, fallback_triggered
-            else:
-                logging.error("Could not create smaller image - switching to OWLv2")
-                fallback_triggered = True
-                return ask_owlv2_if_yellow_car(image_path), fallback_triggered
-
-        if resp.status_code == 429:
-            # Rate limited - mark Azure as unavailable for rest of session
-            azure_rate_limited = True
-            quota_remaining = resp.headers.get("x-ms-user-quota-remaining", "unknown")
-            quota_resets_after = resp.headers.get("x-ms-user-quota-resets-after", "unknown")
-
-            logging.warning("🚫 Rate limit hit (429) - marking Azure as unavailable:")
-            logging.warning(f"   Azure will be bypassed for remainder of session")
-            logging.warning(f"   Quota remaining: {quota_remaining}")
-            logging.warning(f"   Quota resets after: {quota_resets_after}")
-
-            try:
-                reset_time = datetime.fromisoformat(quota_resets_after.replace('Z', '+00:00'))
-                current_time = datetime.now(reset_time.tzinfo)
-                time_until_reset = reset_time - current_time
-
-                if time_until_reset.total_seconds() > 0:
-                    minutes = int(time_until_reset.total_seconds() / 60)
-                    seconds = int(time_until_reset.total_seconds() % 60)
-                    logging.warning(f"   Time until quota reset: {minutes}m {seconds}s")
-                else:
-                    logging.warning("   Quota should be available now")
-            except Exception as e:
-                logging.debug(f"Could not parse reset time: {e}")
-
-            logging.info("🔄 Switching to OWLv2 model for remainder of session...")
-            fallback_triggered = True
-            return ask_owlv2_if_yellow_car(image_path), fallback_triggered
-
-        if resp.status_code != 200:
-            logging.error(f"Azure API error: {resp.status_code}")
-            logging.debug(f"Response headers: {dict(resp.headers)}")
-            logging.info("🔄 Trying OWLv2 fallback due to Azure error...")
-            fallback_triggered = True
-            return ask_owlv2_if_yellow_car(image_path), fallback_triggered
-
+        resp = requests.post(API_ENDPOINT, json=body, headers=headers, timeout=60)
+        resp.raise_for_status()
+        
         data = resp.json()
-        result = data["choices"][0]["message"]["content"].strip().lower()
-        logging.info(f"✅ Azure AI response: {result}")
-        return result, fallback_triggered
-
+        review = data["choices"][0]["message"]["content"].strip()
+        
+        logging.info(f"✅ Generated review ({len(review)} chars)")
+        return review
+        
     except Exception as e:
-        logging.error(f"Error calling Azure AI endpoint: {e}")
-        logging.info("🔄 Trying OWLv2 fallback due to Azure error...")
-        fallback_triggered = True
-        return ask_owlv2_if_yellow_car(image_path), fallback_triggered
+        logging.error(f"Error calling OpenAI API: {e}")
+        return None
 
 
-def post_to_bluesky(image_path, alt_text):
+def post_to_bluesky(review_text, book_data=None):
+    """Post the book review to Bluesky with optional book cover image. Returns post URL or None."""
     if not BSKY_HANDLE or not BSKY_PASSWORD:
         logging.error("Bluesky credentials not defined")
-        return False
-
+        return None
+    
     try:
         client = Client()
         client.login(BSKY_HANDLE.strip(), BSKY_PASSWORD.strip())
-
-        image_data_url = get_image_data_url(image_path, "jpg", max_size=(400, 300), quality=70)
-        if not image_data_url:
-            return False
-
-        header, encoded = image_data_url.split(',', 1)
-        image_bytes = base64.b64decode(encoded)
-        blob = client.upload_blob(image_bytes).blob
-
-        client.app.bsky.feed.post.create(
-            repo=client.me.did,
-            record=models.AppBskyFeedPost.Record(
-                text="GUL BIL!",
-                created_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-                embed=models.AppBskyEmbedImages.Main(
-                    images=[
-                        models.AppBskyEmbedImages.Image(
-                            image=blob,
-                            alt=alt_text
+        
+        # Bluesky has a 300 character limit for posts
+        # Split into multiple posts if needed
+        max_length = 290  # Leave some margin
+        
+        if len(review_text) <= max_length:
+            # Single post
+            embed = None
+            
+            # Add book cover image if available
+            if book_data and book_data.get('image_url'):
+                try:
+                    img_resp = requests.get(book_data['image_url'], timeout=30)
+                    if img_resp.status_code == 200:
+                        blob = client.upload_blob(img_resp.content).blob
+                        embed = models.AppBskyEmbedImages.Main(
+                            images=[
+                                models.AppBskyEmbedImages.Image(
+                                    image=blob,
+                                    alt=f"Book cover: {book_data.get('title', 'Book')}"
+                                )
+                            ]
                         )
-                    ]
+                        logging.info("✅ Uploaded book cover image")
+                except Exception as e:
+                    logging.warning(f"Could not upload image: {e}")
+            
+            post_result = client.app.bsky.feed.post.create(
+                repo=client.me.did,
+                record=models.AppBskyFeedPost.Record(
+                    text=review_text,
+                    created_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                    embed=embed
                 )
             )
-        )
-        logging.info("Successfully posted yellow car to Bluesky!")
-        return True
+            post_url = f"https://bsky.app/profile/{BSKY_HANDLE}/post/{post_result.uri.split('/')[-1]}"
+            logging.info(f"✅ Posted review to Bluesky: {post_url}")
+            return post_url
+        else:
+            # Multi-post thread
+            logging.info(f"Review is {len(review_text)} chars, creating thread...")
+            
+            # Split into chunks
+            chunks = []
+            current_chunk = ""
+            
+            for paragraph in review_text.split('\n'):
+                if len(current_chunk) + len(paragraph) + 1 <= max_length:
+                    current_chunk += paragraph + '\n'
+                else:
+                    if current_chunk:
+                        chunks.append(current_chunk.strip())
+                    current_chunk = paragraph + '\n'
+            
+            if current_chunk:
+                chunks.append(current_chunk.strip())
+            
+            # Try to add book cover image to first post
+            embed = None
+            if book_data and book_data.get('image_url'):
+                try:
+                    img_resp = requests.get(book_data['image_url'], timeout=30)
+                    if img_resp.status_code == 200:
+                        blob = client.upload_blob(img_resp.content).blob
+                        embed = models.AppBskyEmbedImages.Main(
+                            images=[
+                                models.AppBskyEmbedImages.Image(
+                                    image=blob,
+                                    alt=f"Book cover: {book_data.get('title', 'Book')}"
+                                )
+                            ]
+                        )
+                        logging.info("✅ Uploaded book cover image to thread")
+                except Exception as e:
+                    logging.warning(f"Could not upload image: {e}")
+            
+            # Post first message with image
+            root_post = client.app.bsky.feed.post.create(
+                repo=client.me.did,
+                record=models.AppBskyFeedPost.Record(
+                    text=chunks[0],
+                    created_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                    embed=embed
+                )
+            )
+            
+            parent = root_post
+            
+            # Post remaining as replies
+            for chunk in chunks[1:]:
+                time.sleep(1)  # Be nice to the API
+                parent = client.app.bsky.feed.post.create(
+                    repo=client.me.did,
+                    record=models.AppBskyFeedPost.Record(
+                        text=chunk,
+                        created_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                        reply=models.AppBskyFeedPost.ReplyRef(
+                            root=models.ComAtprotoRepoStrongRef.Main(
+                                uri=root_post.uri,
+                                cid=root_post.cid
+                            ),
+                            parent=models.ComAtprotoRepoStrongRef.Main(
+                                uri=parent.uri,
+                                cid=parent.cid
+                            )
+                        )
+                    )
+                )
+            
+            post_url = f"https://bsky.app/profile/{BSKY_HANDLE}/post/{root_post.uri.split('/')[-1]}"
+            logging.info(f"✅ Posted {len(chunks)}-part thread to Bluesky: {post_url}")
+            return post_url
+        
     except Exception as e:
         logging.error(f"Error posting to Bluesky: {e}")
-        return False
+        return None
+
+
+def load_state():
+    """Load previously reviewed books"""
+    if STATE_FILE.exists():
+        try:
+            with open(STATE_FILE, 'r') as f:
+                state = json.load(f)
+                # Migrate old format if needed
+                if "reviewed_urls" in state and "reviewed_books" not in state:
+                    state["reviewed_books"] = []
+                    state.pop("reviewed_urls", None)
+                return state
+        except Exception as e:
+            logging.warning(f"Could not load state: {e}")
+    return {"reviewed_books": [], "stats": {"total_reviews": 0, "total_posted": 0}}
+
+
+def save_state(state):
+    """Save state of reviewed books"""
+    try:
+        with open(STATE_FILE, 'w') as f:
+            json.dump(state, f, indent=2)
+    except Exception as e:
+        logging.error(f"Could not save state: {e}")
 
 
 def main():
-    start_time = datetime.now()
-    max_end_time = start_time + timedelta(minutes=MAX_RUNTIME_MINUTES)
-
-    logging.info(f"Starting Yellow Car Bot - will run for max {MAX_RUNTIME_MINUTES} minutes")
-
-    # Reset Azure rate limit status at start of each session
-    global azure_rate_limited
-    azure_rate_limited = False
-
-    # Pre-load OWLv2 model if HF token is available
-    if HF_API_TOKEN:
-        if load_owlv2_model():
-            logging.info("✅ Hugging Face OWLv2 fallback ready")
-        else:
-            logging.warning("⚠️  Failed to load OWLv2 - fallback not available")
-    else:
-        logging.warning("⚠️  No Hugging Face token - fallback not available")
-
-    urls, current_index, current_stats = get_shuffled_urls()
-    if not urls:
-        logging.error("No URLs available")
-        return
-
-    logging.info(f"Resuming from position {current_index}/{len(urls)}")
-    logging.info(f"All-time stats: {current_stats.get('total_processed', 0)} processed, {current_stats.get('total_posted', 0)} posted")
+    logging.info("🎭 Starting Norli Book Daddy Bot")
     
-    if azure_rate_limited:
-        logging.info("⚠️  Azure API bypassed due to previous rate limiting")
-    elif TOKEN:
-        logging.info("✅ Azure API available")
-    else:
-        logging.info("⚠️  No Azure API token - using OWLv2 only")
-
-    session_processed = 0
-    session_yellow_found = 0
-    session_posted = 0
-    fallback_used = 0
-    final_index = 0
-
-    try:
-        for i in range(current_index, min(current_index + IMAGES_PER_SESSION, len(urls))):
-            if datetime.now() >= max_end_time:
-                logging.info("Time limit reached, stopping gracefully")
-                break
-
-            url = urls[i]
-            timestamp = int(time.time())
-            image_name = f"cam_{i + 1}_{timestamp}.jpg"
-            image_path = TODAY_FOLDER / image_name
-
-            logging.info(f"Processing {i + 1}/{len(urls)}: downloading image...")
-
-            if not download_image(url, image_path):
-                continue
-
-            session_processed += 1
-
-            if find_yellow_clusters(image_path):
-                session_yellow_found += 1
-                logging.info(f"🟡 Yellow cluster detected! Checking with AI...")
-
-                ai_response, was_fallback_used = ask_ai_if_yellow_car(image_path)
-                logging.info(f"AI response: {ai_response}")
-                if was_fallback_used:
-                    fallback_used += 1
-
-                if ai_response and "yes" in ai_response:
-                    logging.info("🚗 YELLOW CAR CONFIRMED! Posting to Bluesky...")
-                    if post_to_bluesky(image_path, alt_text="Yellow car spotted on traffic camera!"):
-                        session_posted += 1
-                        logging.info("✅ Posted to Bluesky successfully!")
-
-            try:
-                image_path.unlink()
-            except:
-                pass
-
-            time.sleep(1)
-
-        final_index = min(current_index + session_processed, len(urls))
-        stats_update = {
-            "total_processed": session_processed,
-            "total_posted": session_posted
+    # Load state
+    state = load_state()
+    reviewed_books = state.get("reviewed_books", [])
+    reviewed_eans = {book["ean"] for book in reviewed_books if "ean" in book}
+    stats = state.get("stats", {"total_reviews": 0, "total_posted": 0})
+    
+    logging.info(f"Previously reviewed: {len(reviewed_eans)} books (by EAN)")
+    logging.info(f"All-time stats: {stats['total_reviews']} reviews generated, {stats['total_posted']} posted")
+    
+    # Get list of books
+    book_urls = scrape_book_list()
+    
+    if not book_urls:
+        logging.error("No books found on the monthly new books page!")
+        logging.info("Canceling run - no books available")
+        exit(78)  # Exit code 78 means "no new books to review"
+    
+    # Extract EANs from URLs and filter out already reviewed books
+    import re
+    new_books = []
+    for url in book_urls:
+        ean_match = re.search(r'-(978\d{10})(?:\?|$)', url)
+        if ean_match:
+            ean = ean_match.group(1)
+            if ean not in reviewed_eans:
+                new_books.append(url)
+        else:
+            # If we can't extract EAN, include it anyway
+            new_books.append(url)
+    
+    if not new_books:
+        logging.info("🛑 No new books to review! All books on the page have been reviewed.")
+        logging.info("Canceling GitHub Action run - no new books available")
+        exit(78)  # Exit code 78 means "no new books to review"
+    
+    logging.info(f"Found {len(new_books)} new books to review (not yet reviewed by EAN)")
+    
+    # Pick a random book
+    selected_url = random.choice(new_books)
+    logging.info(f"📚 Selected: {selected_url}")
+    
+    # Scrape book details
+    book_data = scrape_book_details(selected_url)
+    
+    if not book_data or not book_data['title']:
+        logging.error("Could not extract book details!")
+        return
+    
+    # Generate review
+    review = generate_book_review(book_data)
+    
+    if not review:
+        logging.error("Could not generate review!")
+        return
+    
+    logging.info(f"\n{'='*60}")
+    logging.info(f"BOOK DADDY REVIEW:")
+    logging.info(f"{'='*60}")
+    logging.info(review)
+    logging.info(f"{'='*60}\n")
+    
+    # Post to Bluesky
+    post_url = post_to_bluesky(review, book_data)
+    if post_url:
+        # Update state with EAN and Bluesky post link
+        reviewed_entry = {
+            "ean": book_data['ean'],
+            "title": book_data['title'],
+            "author": book_data['author'],
+            "norli_url": selected_url,
+            "bluesky_post": post_url,
+            "reviewed_at": datetime.now(timezone.utc).isoformat()
         }
-        update_shuffle_state(final_index, stats_update)
-
-    except KeyboardInterrupt:
-        logging.info("Interrupted, saving progress...")
-        final_index = current_index + session_processed
-        stats_update = {"total_processed": session_processed, "total_posted": session_posted}
-        update_shuffle_state(final_index, stats_update)
-    except Exception as e:
-        logging.error(f"Unexpected error: {e}")
-
-    runtime = datetime.now() - start_time
-    updated_stats = load_shuffle_state().get("stats", {})
-
+        reviewed_books.append(reviewed_entry)
+        stats['total_reviews'] += 1
+        stats['total_posted'] += 1
+        
+        state['reviewed_books'] = reviewed_books
+        state['stats'] = stats
+        save_state(state)
+        
+        logging.info("✅ Success! Book review posted to Bluesky")
+        logging.info(f"📝 Tracked EAN: {book_data['ean']}")
+        logging.info(f"🔗 Bluesky post: {post_url}")
+    else:
+        logging.error("❌ Failed to post to Bluesky")
+    
     logging.info(f"\n=== SESSION SUMMARY ===")
-    logging.info(f"Runtime: {runtime.total_seconds():.1f} seconds")
-    logging.info(f"Images processed: {session_processed}")
-    logging.info(f"Yellow clusters found: {session_yellow_found}")
-    logging.info(f"Cars posted: {session_posted}")
-    if fallback_used > 0:
-        logging.info(f"OWLv2 fallbacks used: {fallback_used}")
-    logging.info(f"Progress: {final_index}/{len(urls)}")
-    logging.info(f"All-time totals: {updated_stats.get('total_processed', 0)} processed, {updated_stats.get('total_posted', 0)} posted")
+    logging.info(f"Book: {book_data['title']} by {book_data['author']}")
+    logging.info(f"EAN: {book_data['ean']}")
+    logging.info(f"Review length: {len(review)} characters")
+    logging.info(f"Total books reviewed: {len(reviewed_books)}")
+    logging.info(f"All-time totals: {stats['total_reviews']} reviews, {stats['total_posted']} posted")
 
 
 if __name__ == "__main__":
