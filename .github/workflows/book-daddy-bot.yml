@@ -3,7 +3,7 @@ name: Norli Book Daddy Bot
 on:
   schedule:
     # Run daily at 10:00 AM UTC (11:00 AM CET, 12:00 PM CEST)
-    - cron: '0 10 * * *'
+    - cron: '0 12 * * *'
   workflow_dispatch:  # Allow manual triggers
 
 jobs:
