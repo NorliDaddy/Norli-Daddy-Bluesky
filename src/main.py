@@ -293,7 +293,7 @@ def generate_book_review(book_data):
         return None
     
     # Build the prompt
-    prompt = f"""write a book review as a "book daddy" in a flirty tone, very sexy and funny, in norwegian
+    prompt = f"""write a book review (max 800 characters) as a "book daddy" in a flirty tone, very sexy and funny, in norwegian. Make it engaging and split naturally into 2-3 paragraphs.
 
 Book title: '{book_data['title']}'
 Author: '{book_data['author']}'
@@ -315,7 +315,7 @@ Customer reviews: {book_data['reviews']}"""
                 "content": prompt
             }
         ],
-        "max_tokens": 500,
+        "max_tokens": 300,  # Allow for 3-post thread
         "temperature": 0.9
     }
     
@@ -324,18 +324,41 @@ Customer reviews: {book_data['reviews']}"""
         resp.raise_for_status()
         
         data = resp.json()
-        review = data["choices"][0]["message"]["content"].strip()
+        
+        # Debug logging
+        logging.debug(f"API Response: {json.dumps(data, indent=2)}")
+        
+        # Check if response has expected structure
+        if "choices" not in data or len(data["choices"]) == 0:
+            logging.error(f"Unexpected API response structure: {data}")
+            return None
+        
+        message = data["choices"][0].get("message", {})
+        if "content" not in message:
+            logging.error(f"No content in message: {message}")
+            return None
+        
+        review = message["content"].strip()
         
         logging.info(f"✅ Generated review ({len(review)} chars)")
         return review
         
+    except requests.exceptions.RequestException as e:
+        logging.error(f"HTTP error calling OpenAI API: {e}")
+        if hasattr(e.response, 'text'):
+            logging.error(f"Response: {e.response.text}")
+        return None
+    except KeyError as e:
+        logging.error(f"KeyError parsing API response: {e}")
+        logging.error(f"Full response: {data if 'data' in locals() else 'No response data'}")
+        return None
     except Exception as e:
         logging.error(f"Error calling OpenAI API: {e}")
         return None
 
 
 def post_to_bluesky(review_text, book_data=None):
-    """Post the book review to Bluesky with optional book cover image. Returns post URL or None."""
+    """Post the book review to Bluesky as a thread (max 3 posts) with book cover and link. Returns post URL or None."""
     if not BSKY_HANDLE or not BSKY_PASSWORD:
         logging.error("Bluesky credentials not defined")
         return None
@@ -344,136 +367,104 @@ def post_to_bluesky(review_text, book_data=None):
         client = Client()
         client.login(BSKY_HANDLE.strip(), BSKY_PASSWORD.strip())
         
-        # Bluesky has a 300 character limit for posts
-        # Split into multiple posts if needed
         max_length = 290  # Leave some margin
+        max_posts = 3
         
-        if len(review_text) <= max_length:
-            # Single post
-            embed = None
-            
-            # Add book cover image if available
-            if book_data and book_data.get('image_url'):
-                try:
-                    img_resp = requests.get(book_data['image_url'], timeout=30)
-                    if img_resp.status_code == 200:
-                        blob = client.upload_blob(img_resp.content).blob
-                        embed = models.AppBskyEmbedImages.Main(
-                            images=[
-                                models.AppBskyEmbedImages.Image(
-                                    image=blob,
-                                    alt=f"Book cover: {book_data.get('title', 'Book')}"
-                                )
-                            ]
-                        )
-                        logging.info("✅ Uploaded book cover image")
-                except Exception as e:
-                    logging.warning(f"Could not upload image: {e}")
-            
-            post_result = client.app.bsky.feed.post.create(
-                repo=client.me.did,
-                record=models.AppBskyFeedPost.Record(
-                    text=review_text,
-                    created_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-                    embed=embed
-                )
-            )
-            post_url = f"https://bsky.app/profile/{BSKY_HANDLE}/post/{post_result.uri.split('/')[-1]}"
-            logging.info(f"✅ Posted review to Bluesky: {post_url}")
-            return post_url
-        else:
-            # Multi-post thread
-            logging.info(f"Review is {len(review_text)} chars, creating thread...")
-            
-            # Split into chunks - handle both paragraphs and word boundaries
-            chunks = []
-            current_chunk = ""
-            
-            # First try to split by paragraphs
-            paragraphs = review_text.split('\n')
-            
-            for paragraph in paragraphs:
-                # If single paragraph is too long, split it by sentences or words
-                if len(paragraph) > max_length:
-                    # Split long paragraph into words
-                    words = paragraph.split(' ')
-                    temp_chunk = ""
-                    for word in words:
-                        if len(temp_chunk) + len(word) + 1 <= max_length:
-                            temp_chunk += word + ' '
-                        else:
-                            if temp_chunk:
-                                chunks.append(temp_chunk.strip())
-                            temp_chunk = word + ' '
-                    if temp_chunk:
-                        paragraph = temp_chunk.strip()
-                
-                # Now add paragraph to current chunk
-                if len(current_chunk) + len(paragraph) + 1 <= max_length:
-                    current_chunk += paragraph + '\n'
-                else:
-                    if current_chunk:
-                        chunks.append(current_chunk.strip())
-                    current_chunk = paragraph + '\n'
-            
-            if current_chunk:
-                chunks.append(current_chunk.strip())
-            
-            # Try to add book cover image to first post
-            embed = None
-            if book_data and book_data.get('image_url'):
-                try:
-                    img_resp = requests.get(book_data['image_url'], timeout=30)
-                    if img_resp.status_code == 200:
-                        blob = client.upload_blob(img_resp.content).blob
-                        embed = models.AppBskyEmbedImages.Main(
-                            images=[
-                                models.AppBskyEmbedImages.Image(
-                                    image=blob,
-                                    alt=f"Book cover: {book_data.get('title', 'Book')}"
-                                )
-                            ]
-                        )
-                        logging.info("✅ Uploaded book cover image to thread")
-                except Exception as e:
-                    logging.warning(f"Could not upload image: {e}")
-            
-            # Post first message with image
-            root_post = client.app.bsky.feed.post.create(
-                repo=client.me.did,
-                record=models.AppBskyFeedPost.Record(
-                    text=chunks[0],
-                    created_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-                    embed=embed
-                )
-            )
-            
-            parent = root_post
-            
-            # Post remaining as replies
-            for chunk in chunks[1:]:
-                time.sleep(1)  # Be nice to the API
-                parent = client.app.bsky.feed.post.create(
-                    repo=client.me.did,
-                    record=models.AppBskyFeedPost.Record(
-                        text=chunk,
-                        created_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-                        reply=models.AppBskyFeedPost.ReplyRef(
-                            root=models.ComAtprotoRepoStrongRef.Main(
-                                uri=root_post.uri,
-                                cid=root_post.cid
-                            ),
-                            parent=models.ComAtprotoRepoStrongRef.Main(
-                                uri=parent.uri,
-                                cid=parent.cid
+        # Split review into chunks for thread (max 3 posts)
+        chunks = []
+        
+        # Split by paragraphs first
+        paragraphs = [p.strip() for p in review_text.split('\n') if p.strip()]
+        
+        current_chunk = ""
+        for paragraph in paragraphs:
+            # If adding this paragraph exceeds limit or we have 2 chunks already
+            if len(chunks) >= max_posts - 1:  # Reserve last post for link
+                # Add remaining to current chunk or create new
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                    current_chunk = ""
+                # Combine remaining paragraphs
+                remaining = ' '.join(paragraphs[paragraphs.index(paragraph):])
+                if len(remaining) > max_length:
+                    remaining = remaining[:max_length-3] + "..."
+                chunks.append(remaining)
+                break
+            elif len(current_chunk) + len(paragraph) + 2 <= max_length:
+                current_chunk += paragraph + "\n\n"
+            else:
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                current_chunk = paragraph + "\n\n"
+        
+        if current_chunk and len(chunks) < max_posts - 1:
+            chunks.append(current_chunk.strip())
+        
+        # Ensure we don't exceed max_posts for review
+        chunks = chunks[:max_posts - 1]
+        
+        # Add book link as final post
+        book_link_text = f"📚 Les mer: {book_data.get('url', '')}" if book_data else ""
+        if book_link_text:
+            chunks.append(book_link_text)
+        
+        logging.info(f"Creating {len(chunks)}-post thread")
+        
+        # Upload book cover image for first post
+        embed = None
+        if book_data and book_data.get('image_url'):
+            try:
+                img_resp = requests.get(book_data['image_url'], timeout=30)
+                if img_resp.status_code == 200:
+                    blob = client.upload_blob(img_resp.content).blob
+                    embed = models.AppBskyEmbedImages.Main(
+                        images=[
+                            models.AppBskyEmbedImages.Image(
+                                image=blob,
+                                alt=f"Book cover: {book_data.get('title', 'Book')}"
                             )
+                        ]
+                    )
+                    logging.info("✅ Uploaded book cover image")
+            except Exception as e:
+                logging.warning(f"Could not upload image: {e}")
+        
+        # Post first message with image
+        root_post = client.app.bsky.feed.post.create(
+            repo=client.me.did,
+            record=models.AppBskyFeedPost.Record(
+                text=chunks[0],
+                created_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                embed=embed
+            )
+        )
+        
+        parent = root_post
+        
+        # Post remaining as replies
+        for chunk in chunks[1:]:
+            time.sleep(1)  # Be nice to the API
+            parent = client.app.bsky.feed.post.create(
+                repo=client.me.did,
+                record=models.AppBskyFeedPost.Record(
+                    text=chunk,
+                    created_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                    reply=models.AppBskyFeedPost.ReplyRef(
+                        root=models.ComAtprotoRepoStrongRef.Main(
+                            uri=root_post.uri,
+                            cid=root_post.cid
+                        ),
+                        parent=models.ComAtprotoRepoStrongRef.Main(
+                            uri=parent.uri,
+                            cid=parent.cid
                         )
                     )
                 )
-            
-            post_url = f"https://bsky.app/profile/{BSKY_HANDLE}/post/{root_post.uri.split('/')[-1]}"
-            logging.info(f"✅ Posted {len(chunks)}-part thread to Bluesky: {post_url}")
-            return post_url
+            )
+        
+        post_url = f"https://bsky.app/profile/{BSKY_HANDLE}/post/{root_post.uri.split('/')[-1]}"
+        logging.info(f"✅ Posted {len(chunks)}-post thread to Bluesky: {post_url}")
+        return post_url
         
     except Exception as e:
         logging.error(f"Error posting to Bluesky: {e}")
