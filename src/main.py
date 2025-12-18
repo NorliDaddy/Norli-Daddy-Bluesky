@@ -293,14 +293,18 @@ def generate_book_review(book_data):
         return None
     
     # Build the prompt
-    prompt = f"""write a book review (max 800 characters) as a "book daddy" in a flirty tone, very sexy and funny, in norwegian. Make it engaging and split naturally into 2-3 paragraphs.
+    prompt = f"""Write a flirty, sexy, and funny book review in Norwegian as a "book daddy". Maximum 800 characters. Use a playful and seductive tone throughout.
+
+IMPORTANT: Write ONLY the flirty review text - no technical details, no book title, no author name, no metadata. Just pure entertaining review content that makes people want to read the book.
 
 Book title: '{book_data['title']}'
 Author: '{book_data['author']}'
 Year: '{book_data['year']}'
 Language: '{book_data['language']}'
 Description: {book_data['description']}
-Customer reviews: {book_data['reviews']}"""
+Customer reviews: {book_data['reviews']}
+
+Write 2-3 engaging paragraphs that flow naturally. Focus on why this book is irresistible."""
     
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -371,69 +375,116 @@ def post_to_bluesky(review_text, book_data=None):
         max_posts = 3
         
         # Split review into chunks for thread (max 3 posts)
+        # Strategy: Split by sentences (periods), keep continuing naturally without truncation
+        
+        # Split into sentences
+        sentences = []
+        for sentence in review_text.split('. '):
+            s = sentence.strip()
+            if s:
+                # Add period back unless it's the last sentence
+                if not s.endswith(('.', '!', '?')):
+                    s += '.'
+                sentences.append(s)
+        
+        # Build posts by adding sentences until we hit the limit
         chunks = []
-        
-        # Split by double newlines to get paragraphs
-        paragraphs = [p.strip() for p in review_text.split('\n\n') if p.strip()]
-        
-        # If we only have 1 or 2 paragraphs, split by sentences or words
-        if len(paragraphs) <= 2:
-            # Try splitting by '. ' for sentences
-            sentences = []
-            for para in paragraphs:
-                sentences.extend([s.strip() + '.' for s in para.split('. ') if s.strip()])
-            paragraphs = sentences
-        
         current_chunk = ""
-        for paragraph in paragraphs:
-            # Reserve last post for book link
-            if len(chunks) >= max_posts - 1:
-                # Add remaining to current chunk or create new
-                if current_chunk:
-                    chunks.append(current_chunk.strip())
-                    current_chunk = ""
-                # Combine remaining paragraphs
-                remaining = ' '.join(paragraphs[paragraphs.index(paragraph):])
-                if len(remaining) > max_length:
-                    remaining = remaining[:max_length-3] + "..."
-                chunks.append(remaining)
-                break
-            elif len(current_chunk) + len(paragraph) + 3 <= max_length:
-                if current_chunk:
-                    current_chunk += "  \n" + paragraph
-                else:
-                    current_chunk = paragraph
-            else:
-                if current_chunk:
-                    chunks.append(current_chunk.strip())
-                # Check if paragraph itself is too long
-                if len(paragraph) > max_length:
-                    # Split at word boundary
-                    truncate_at = paragraph[:max_length-3].rfind(' ')
-                    if truncate_at == -1:
-                        truncate_at = max_length - 3
-                    current_chunk = paragraph[:truncate_at] + "..."
-                else:
-                    current_chunk = paragraph
         
-        if current_chunk and len(chunks) < max_posts - 1:
+        for i, sentence in enumerate(sentences):
+            test_chunk = current_chunk + (" " if current_chunk else "") + sentence
+            
+            # Check if adding this sentence would exceed limit
+            if len(test_chunk) > max_length:
+                # Save current chunk and start new one
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                    current_chunk = sentence
+                else:
+                    # Single sentence too long - need to split it
+                    # Find last space before limit
+                    split_at = sentence[:max_length].rfind(' ')
+                    if split_at == -1:
+                        split_at = max_length
+                    chunks.append(sentence[:split_at].strip())
+                    current_chunk = sentence[split_at:].strip()
+            else:
+                current_chunk = test_chunk
+        
+        # Add remaining text
+        if current_chunk:
             chunks.append(current_chunk.strip())
         
-        # Ensure we don't exceed max_posts for review
-        chunks = chunks[:max_posts - 1]
+        # Now we need exactly 3 posts:
+        # Post 1: First part of review (max 290)
+        # Post 2: Second part of review (max 290)
+        # Post 3: Final part of review + book link
         
-        # Final safety check: truncate any chunk over max_length
-        for i in range(len(chunks)):
-            if len(chunks[i]) > max_length:
-                truncate_at = chunks[i][:max_length-3].rfind(' ')
+        book_link = f"📚 Les mer: {book_data.get('url', '')}" if book_data else ""
+        book_link_length = len(book_link)
+        
+        if len(chunks) == 1:
+            # Single chunk - split it into parts
+            text = chunks[0]
+            # Post 1: First 290 chars at sentence boundary
+            split1 = text[:max_length].rfind('. ')
+            if split1 == -1:
+                split1 = text[:max_length].rfind(' ')
+            if split1 == -1:
+                split1 = max_length
+            else:
+                split1 += 1  # Include the period
+            
+            post1 = text[:split1].strip()
+            remaining = text[split1:].strip()
+            
+            # Post 2: Next 290 chars at sentence boundary
+            if len(remaining) > 0:
+                split2 = remaining[:max_length].rfind('. ')
+                if split2 == -1:
+                    split2 = remaining[:max_length].rfind(' ')
+                if split2 == -1:
+                    split2 = max_length
+                else:
+                    split2 += 1
+                
+                post2 = remaining[:split2].strip()
+                post3_text = remaining[split2:].strip()
+            else:
+                post2 = ""
+                post3_text = ""
+            
+            # Post 3: Remaining text + book link
+            if post3_text:
+                post3 = post3_text + " " + book_link
+            else:
+                post3 = book_link
+            
+            chunks = [post1, post2, post3] if post2 else [post1, post3]
+        
+        elif len(chunks) == 2:
+            # Two chunks - use as post 1 and 2, add book link to post 3
+            chunks.append(book_link)
+        
+        elif len(chunks) >= 3:
+            # Multiple chunks - take first two, combine rest with book link for post 3
+            post1 = chunks[0]
+            post2 = chunks[1]
+            post3_text = ' '.join(chunks[2:])
+            
+            # Ensure post 3 fits with book link
+            available_space = max_length - book_link_length - 1  # -1 for space
+            if len(post3_text) > available_space:
+                # Truncate at sentence boundary
+                truncate_at = post3_text[:available_space].rfind('. ')
                 if truncate_at == -1:
-                    truncate_at = max_length - 3
-                chunks[i] = chunks[i][:truncate_at] + "..."
-        
-        # Add book link as final post
-        book_link_text = f"📚 Les mer: {book_data.get('url', '')}" if book_data else ""
-        if book_link_text:
-            chunks.append(book_link_text)
+                    truncate_at = post3_text[:available_space].rfind(' ')
+                if truncate_at == -1:
+                    truncate_at = available_space
+                post3_text = post3_text[:truncate_at].strip()
+            
+            post3 = post3_text + " " + book_link if post3_text else book_link
+            chunks = [post1, post2, post3]
         
         logging.info(f"Creating {len(chunks)}-post thread")
         
