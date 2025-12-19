@@ -156,7 +156,15 @@ def scrape_book_details(book_url):
                     break
         
         # Try to extract author
-        author_selectors = ['.author', '.product-author', 'span[itemprop="author"]', 'a[href*="/forfatter/"]', '[data-testid="author"]']
+        author_selectors = [
+            '.productFullDetailNorli-authors-cdP a',  # Norli specific
+            '.productFullDetailNorli-authors-cdP',    # Norli specific fallback
+            'a[href*="/forfatter/"]', 
+            '.author', 
+            '.product-author', 
+            'span[itemprop="author"]', 
+            '[data-testid="author"]'
+        ]
         for selector in author_selectors:
             element = soup.select_one(selector)
             if element:
@@ -295,16 +303,22 @@ def generate_book_review(book_data):
     # Build the prompt
     prompt = f"""Write a flirty, sexy, and funny book review in Norwegian as a "book daddy". Maximum 800 characters. Use a playful and seductive tone throughout.
 
-IMPORTANT: Write ONLY the flirty review text - no technical details, no book title, no author name, no metadata. Just pure entertaining review content that makes people want to read the book.
+CRITICAL RULES:
+- Write ONLY the flirty review text - no technical details, no metadata
+- DO NOT mention the book title, author name, or year in your review
+- Just pure entertaining review content that makes people want to read the book
+- Focus on the content, themes, and experience of reading it
+- Make it sexy, funny, and irresistible
 
-Book title: '{book_data['title']}'
+Book context (DO NOT repeat these in your review):
+Title: '{book_data['title']}'
 Author: '{book_data['author']}'
 Year: '{book_data['year']}'
 Language: '{book_data['language']}'
 Description: {book_data['description']}
 Customer reviews: {book_data['reviews']}
 
-Write 2-3 engaging paragraphs that flow naturally. Focus on why this book is irresistible."""
+Write 2-3 engaging paragraphs that flow naturally. Focus on why this book is irresistible based on the description and themes."""
     
     headers = {
         "Authorization": f"Bearer {API_KEY}",
