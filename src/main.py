@@ -414,9 +414,17 @@ def post_to_bluesky(review_text, book_data=None):
                 if current_chunk:
                     chunks.append(current_chunk.strip())
                     current_chunk = sentence
+                    # Check if this single sentence is also too long
+                    if len(sentence) > max_length:
+                        # Split the long sentence
+                        split_at = sentence[:max_length].rfind(' ')
+                        if split_at == -1:
+                            split_at = max_length
+                        chunks[-1] = chunks[-1] if len(chunks) > 0 and len(chunks[-1]) > 0 else ""
+                        chunks.append(sentence[:split_at].strip())
+                        current_chunk = sentence[split_at:].strip()
                 else:
                     # Single sentence too long - need to split it
-                    # Find last space before limit
                     split_at = sentence[:max_length].rfind(' ')
                     if split_at == -1:
                         split_at = max_length
@@ -428,6 +436,30 @@ def post_to_bluesky(review_text, book_data=None):
         # Add remaining text
         if current_chunk:
             chunks.append(current_chunk.strip())
+        
+        # CRITICAL: Validate ALL chunks are under max_length
+        validated_chunks = []
+        for chunk in chunks:
+            while len(chunk) > max_length:
+                # Split at sentence or word boundary
+                split_at = chunk[:max_length].rfind('. ')
+                if split_at == -1:
+                    split_at = chunk[:max_length].rfind(' ')
+                if split_at == -1:
+                    split_at = max_length
+                else:
+                    split_at += 1  # Include the period
+                validated_chunks.append(chunk[:split_at].strip())
+                chunk = chunk[split_at:].strip()
+            if chunk:
+                validated_chunks.append(chunk)
+        
+        chunks = validated_chunks
+        
+        # Debug: Log chunk sizes before processing
+        logging.info(f"Initial chunks: {len(chunks)} chunks")
+        for i, chunk in enumerate(chunks, 1):
+            logging.info(f"  Chunk {i}: {len(chunk)} chars")
         
         # Now we need exactly 3 posts:
         # Post 1: First part of review (max 290)
@@ -477,8 +509,48 @@ def post_to_bluesky(review_text, book_data=None):
             chunks = [post1, post2, post3] if post2 else [post1, post3]
         
         elif len(chunks) == 2:
-            # Two chunks - use as post 1 and 2, add book link to post 3
-            chunks.append(book_link)
+            # Two chunks - ensure both are under limit, then add book link as post 3
+            post1 = chunks[0]
+            post2 = chunks[1]
+            
+            # Ensure post1 is under limit
+            if len(post1) > max_length:
+                split_at = post1[:max_length].rfind('. ')
+                if split_at == -1:
+                    split_at = post1[:max_length].rfind(' ')
+                if split_at == -1:
+                    split_at = max_length
+                post1 = post1[:split_at].strip()
+            
+            # Ensure post2 is under limit
+            if len(post2) > max_length:
+                split_at = post2[:max_length].rfind('. ')
+                if split_at == -1:
+                    split_at = post2[:max_length].rfind(' ')
+                if split_at == -1:
+                    split_at = max_length
+                # The overflow goes to post3
+                post3_text = post2[split_at:].strip()
+                post2 = post2[:split_at].strip()
+            else:
+                post3_text = ""
+            
+            # Post 3: remaining text + book link
+            if post3_text:
+                # Ensure post3 text + link fits
+                available_space = max_length - book_link_length - 1
+                if len(post3_text) > available_space:
+                    truncate_at = post3_text[:available_space].rfind('. ')
+                    if truncate_at == -1:
+                        truncate_at = post3_text[:available_space].rfind(' ')
+                    if truncate_at == -1:
+                        truncate_at = available_space
+                    post3_text = post3_text[:truncate_at].strip()
+                post3 = post3_text + " " + book_link
+            else:
+                post3 = book_link
+            
+            chunks = [post1, post2, post3]
         
         elif len(chunks) >= 3:
             # Multiple chunks - take first two, combine rest with book link for post 3
@@ -499,6 +571,11 @@ def post_to_bluesky(review_text, book_data=None):
             
             post3 = post3_text + " " + book_link if post3_text else book_link
             chunks = [post1, post2, post3]
+        
+        # Final logging: Show what we're about to post
+        logging.info(f"Final thread structure: {len(chunks)} posts")
+        for i, chunk in enumerate(chunks, 1):
+            logging.info(f"  Post {i}: {len(chunk)} chars")
         
         logging.info(f"Creating {len(chunks)}-post thread")
         
