@@ -71,10 +71,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/du-er-hjemme-na-9788249529179",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3maxmplmebd2h",
       "reviewed_at": "2025-12-27T10:42:39.677837+00:00"
+    },
+    {
+      "ean": "9788202894535",
+      "title": "Wanda",
+      "author": "Anders Heger",
+      "norli_url": "https://www.norli.no/boker/dokumentar-og-fakta/historie-og-dokumentar/biografier-og-memoarer/wanda-1-9788202894535",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mb25abj6kd23",
+      "reviewed_at": "2025-12-28T10:43:38.830026+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 9,
-    "total_posted": 9
+    "total_reviews": 10,
+    "total_posted": 10
   }
 }
