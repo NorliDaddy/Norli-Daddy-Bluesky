@@ -103,10 +103,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/krimboker/styggemannen-9788269387308",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mbbopuz6ah2i",
       "reviewed_at": "2025-12-31T10:45:14.283927+00:00"
+    },
+    {
+      "ean": "9788205609679",
+      "title": "1899 - preludium",
+      "author": "Gunnar Staalesen",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/krimboker/1899-1-9788205609679",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mbe7bswq7y2i",
+      "reviewed_at": "2026-01-01T10:46:55.628921+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 13,
-    "total_posted": 13
+    "total_reviews": 14,
+    "total_posted": 14
   }
 }
