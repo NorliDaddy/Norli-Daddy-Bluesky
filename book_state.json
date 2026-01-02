@@ -111,10 +111,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/krimboker/1899-1-9788205609679",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mbe7bswq7y2i",
       "reviewed_at": "2026-01-01T10:46:55.628921+00:00"
+    },
+    {
+      "ean": "9788202893897",
+      "title": "Den usannsynlige seriemorderen",
+      "author": "Simen S\u00e6tre",
+      "norli_url": "https://www.norli.no/boker/dokumentar-og-fakta/historie-og-dokumentar/biografier-og-memoarer/den-usannsynlige-seriemorderen-9788202893897",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mbgpmitbve2c",
+      "reviewed_at": "2026-01-02T10:44:33.363752+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 14,
-    "total_posted": 14
+    "total_reviews": 15,
+    "total_posted": 15
   }
 }
