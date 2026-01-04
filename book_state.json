@@ -127,10 +127,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/krimboker/doggerland-3-9788234015953",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mbjaaw3wcx2p",
       "reviewed_at": "2026-01-03T10:47:37.883019+00:00"
+    },
+    {
+      "ean": "9788284320786",
+      "title": "Den umulige formuen",
+      "author": "Richard Osman",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/krimboker/den-umulige-formuen-9788284320786",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mblqgvnuse2j",
+      "reviewed_at": "2026-01-04T10:42:37.921305+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 16,
-    "total_posted": 16
+    "total_reviews": 17,
+    "total_posted": 17
   }
 }
