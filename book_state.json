@@ -135,10 +135,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/krimboker/den-umulige-formuen-9788284320786",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mblqgvnuse2j",
       "reviewed_at": "2026-01-04T10:42:37.921305+00:00"
+    },
+    {
+      "ean": "9788234725043",
+      "title": "Den siste saken",
+      "author": "J\u00f8rn Lier Horst",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/krimboker/den-siste-saken-9788234725043",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mbobk6jwng2h",
+      "reviewed_at": "2026-01-05T10:54:01.046757+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 17,
-    "total_posted": 17
+    "total_reviews": 18,
+    "total_posted": 18
   }
 }
