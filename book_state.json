@@ -151,10 +151,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/krimboker/interregnum-9788203459832",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mbqrvtb5yh2h",
       "reviewed_at": "2026-01-06T10:52:11.187370+00:00"
+    },
+    {
+      "ean": "9788203458309",
+      "title": "Alliansen - roman",
+      "author": "Aslak Nore",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/alliansen-5-9788203458309",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mbtcegrhkb2f",
+      "reviewed_at": "2026-01-07T10:52:00.808584+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 19,
-    "total_posted": 19
+    "total_reviews": 20,
+    "total_posted": 20
   }
 }
