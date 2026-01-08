@@ -159,10 +159,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/alliansen-5-9788203458309",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mbtcegrhkb2f",
       "reviewed_at": "2026-01-07T10:52:00.808584+00:00"
+    },
+    {
+      "ean": "9788284372082",
+      "title": "Vagusnerven - kroppens skjulte superkraft",
+      "author": "Torkil F\u00e6r\u00f8",
+      "norli_url": "https://www.norli.no/boker/dokumentar-og-fakta/livssyn-og-selvutvikling/selvutvikling/vagusnerven-9788284372082",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mbvsutlssl2r",
+      "reviewed_at": "2026-01-08T10:52:50.405494+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 20,
-    "total_posted": 20
+    "total_reviews": 21,
+    "total_posted": 21
   }
 }
