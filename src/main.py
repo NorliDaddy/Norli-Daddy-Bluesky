@@ -623,9 +623,10 @@ def post_to_bluesky(review_text, book_data=None):
             
             # Strategy: Work backwards from the end
             # Post 3: Reserve space for book link and take as much text as possible
-            if len(full_text) > post3_text_max:
+            post3_max = max_length - book_link_length - 1  # -1 for space
+            if len(full_text) > post3_max:
                 # Find sentence boundary for post 3 content
-                post3_split = full_text[:-post3_text_max]  # Text that won't fit in post 3
+                post3_split = full_text[:-post3_max]  # Text that won't fit in post 3
                 post3_start_pos = len(post3_split)
                 
                 # Look for sentence boundary before post3 starts
