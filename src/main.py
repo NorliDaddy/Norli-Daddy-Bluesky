@@ -301,7 +301,7 @@ def generate_book_review(book_data):
         return None
     
     # Build the prompt
-    prompt = f"""Write a flirty, sexy, and funny book review in Norwegian as a "book daddy". Maximum 800 characters. Use a playful and seductive tone throughout.
+    prompt = f"""Write a flirty, sexy, and funny book review in Norwegian as a "book daddy". Maximum 700 characters. Use a playful and seductive tone throughout.
 
 CRITICAL RULES:
 - Write ONLY the flirty review text - no technical details, no metadata
@@ -333,7 +333,7 @@ Write 2-3 engaging paragraphs that flow naturally. Focus on why this book is irr
                 "content": prompt
             }
         ],
-        "max_tokens": 220,  # Allow for 3-post thread
+        "max_tokens": 220,  # Roughly 700-750 chars
         "temperature": 0.9
     }
     
@@ -359,6 +359,13 @@ Write 2-3 engaging paragraphs that flow naturally. Focus on why this book is irr
         review = message["content"].strip()
         
         logging.info(f"✅ Generated review ({len(review)} chars)")
+        
+        # Check if review is too long for 3 posts (max ~820 chars for content)
+        max_review_length = 820
+        if len(review) > max_review_length:
+            logging.warning(f"Review is {len(review)} chars, requesting shorter version from GPT-4o")
+            return shorten_book_review(review, book_data, max_review_length)
+        
         return review
         
     except requests.exceptions.RequestException as e:
@@ -373,6 +380,63 @@ Write 2-3 engaging paragraphs that flow naturally. Focus on why this book is irr
     except Exception as e:
         logging.error(f"Error calling OpenAI API: {e}")
         return None
+
+
+def shorten_book_review(current_review, book_data, target_length):
+    """Ask GPT-4o to shorten an existing review"""
+    logging.info(f"Shortening review from {len(current_review)} to ~{target_length} chars")
+    
+    if not API_KEY:
+        logging.error("API key (KEY_GITHUB_TOKEN) not defined")
+        return current_review
+    
+    shorten_prompt = f"""The following book review is too long. Please rewrite it to be maximum {target_length} characters while keeping it flirty, sexy, funny, and engaging. Maintain the playful seductive tone.
+
+Current review ({len(current_review)} chars):
+{current_review}
+
+RULES:
+- Keep the same tone and style
+- Make it shorter but still irresistible
+- DO NOT add title, author, or year
+- Aim for {target_length} characters or less"""
+    
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    body = {
+        "model": MODEL_NAME,
+        "messages": [
+            {
+                "role": "user",
+                "content": shorten_prompt
+            }
+        ],
+        "max_tokens": 180,
+        "temperature": 0.8
+    }
+    
+    try:
+        resp = requests.post(API_ENDPOINT, json=body, headers=headers, timeout=60)
+        resp.raise_for_status()
+        
+        data = resp.json()
+        
+        message = data["choices"][0].get("message", {})
+        if "content" not in message:
+            logging.error(f"No content in shortening response")
+            return current_review
+        
+        shortened = message["content"].strip()
+        
+        logging.info(f"✅ Shortened review to {len(shortened)} chars")
+        return shortened
+        
+    except Exception as e:
+        logging.error(f"Error shortening review: {e}")
+        return current_review
 
 
 def post_to_bluesky(review_text, book_data=None):
@@ -557,14 +621,11 @@ def post_to_bluesky(review_text, book_data=None):
             # Combine all chunks into one text
             full_text = ' '.join(chunks)
             
-            # Calculate available space for post 3 (needs to fit book link)
-            post3_max = max_length - book_link_length - 1  # -1 for space
-            
             # Strategy: Work backwards from the end
-            # Post 3: Take as much text as possible that fits with book link
-            if len(full_text) > post3_max:
+            # Post 3: Reserve space for book link and take as much text as possible
+            if len(full_text) > post3_text_max:
                 # Find sentence boundary for post 3 content
-                post3_split = full_text[:-post3_max]  # Text that won't fit in post 3
+                post3_split = full_text[:-post3_text_max]  # Text that won't fit in post 3
                 post3_start_pos = len(post3_split)
                 
                 # Look for sentence boundary before post3 starts
@@ -582,6 +643,20 @@ def post_to_bluesky(review_text, book_data=None):
                 remaining_text = ""
             
             post3 = post3_text + " " + book_link if post3_text else book_link
+            
+            # Ensure post 3 doesn't exceed 300 chars total
+            while len(post3) > 300:
+                # Trim post3_text
+                trim_at = post3_text.rfind('. ')
+                if trim_at == -1:
+                    trim_at = post3_text.rfind(' ')
+                if trim_at == -1:
+                    trim_at = len(post3_text) - 10
+                if trim_at > 0:
+                    post3_text = post3_text[:trim_at].strip()
+                    post3 = post3_text + " " + book_link if post3_text else book_link
+                else:
+                    break
             
             # Now split remaining_text between post 1 and post 2
             if remaining_text:
