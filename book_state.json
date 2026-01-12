@@ -191,10 +191,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/den-siste-sangen-9788234726071",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mc5e3a5cz22i",
       "reviewed_at": "2026-01-11T10:49:16.585649+00:00"
+    },
+    {
+      "ean": "9788269295016",
+      "title": "Hele deg - veien til bedre helse",
+      "author": "Annette Dragland",
+      "norli_url": "https://www.norli.no/boker/dokumentar-og-fakta/familie-og-helse/medisin-og-sykdom/hele-deg-9788269295016",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mc7urd7d442i",
+      "reviewed_at": "2026-01-12T10:53:17.354036+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 24,
-    "total_posted": 24
+    "total_reviews": 25,
+    "total_posted": 25
   }
 }
