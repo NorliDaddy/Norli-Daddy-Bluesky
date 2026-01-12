@@ -333,7 +333,7 @@ Write 2-3 engaging paragraphs that flow naturally. Focus on why this book is irr
                 "content": prompt
             }
         ],
-        "max_tokens": 300,  # Allow for 3-post thread
+        "max_tokens": 220,  # Allow for 3-post thread
         "temperature": 0.9
     }
     
@@ -553,24 +553,85 @@ def post_to_bluesky(review_text, book_data=None):
             chunks = [post1, post2, post3]
         
         elif len(chunks) >= 3:
-            # Multiple chunks - take first two, combine rest with book link for post 3
-            post1 = chunks[0]
-            post2 = chunks[1]
-            post3_text = ' '.join(chunks[2:])
+            # Multiple chunks - need to redistribute content evenly across 3 posts
+            # Combine all chunks into one text
+            full_text = ' '.join(chunks)
             
-            # Ensure post 3 fits with book link
-            available_space = max_length - book_link_length - 1  # -1 for space
-            if len(post3_text) > available_space:
-                # Truncate at sentence boundary
-                truncate_at = post3_text[:available_space].rfind('. ')
-                if truncate_at == -1:
-                    truncate_at = post3_text[:available_space].rfind(' ')
-                if truncate_at == -1:
-                    truncate_at = available_space
-                post3_text = post3_text[:truncate_at].strip()
+            # Calculate available space for post 3 (needs to fit book link)
+            post3_max = max_length - book_link_length - 1  # -1 for space
+            
+            # Strategy: Work backwards from the end
+            # Post 3: Take as much text as possible that fits with book link
+            if len(full_text) > post3_max:
+                # Find sentence boundary for post 3 content
+                post3_split = full_text[:-post3_max]  # Text that won't fit in post 3
+                post3_start_pos = len(post3_split)
+                
+                # Look for sentence boundary before post3 starts
+                boundary = post3_split.rfind('. ')
+                if boundary == -1:
+                    boundary = post3_split.rfind(' ')
+                if boundary != -1:
+                    post3_start_pos = boundary + 1
+                
+                post3_text = full_text[post3_start_pos:].strip()
+                remaining_text = full_text[:post3_start_pos].strip()
+            else:
+                # All text fits in post 3
+                post3_text = full_text
+                remaining_text = ""
             
             post3 = post3_text + " " + book_link if post3_text else book_link
-            chunks = [post1, post2, post3]
+            
+            # Now split remaining_text between post 1 and post 2
+            if remaining_text:
+                # Try to split roughly in half
+                mid_point = len(remaining_text) // 2
+                
+                # Find sentence boundary near midpoint
+                search_start = max(0, mid_point - 100)
+                search_end = min(len(remaining_text), mid_point + 100)
+                search_region = remaining_text[search_start:search_end]
+                
+                split_pos = search_region.rfind('. ')
+                if split_pos == -1:
+                    split_pos = search_region.rfind(' ')
+                
+                if split_pos != -1:
+                    actual_split = search_start + split_pos + 1
+                else:
+                    actual_split = mid_point
+                
+                post1 = remaining_text[:actual_split].strip()
+                post2 = remaining_text[actual_split:].strip()
+                
+                # Ensure neither exceeds max_length
+                if len(post1) > max_length:
+                    trim_at = post1[:max_length].rfind('. ')
+                    if trim_at == -1:
+                        trim_at = post1[:max_length].rfind(' ')
+                    if trim_at == -1:
+                        trim_at = max_length
+                    post1 = post1[:trim_at].strip()
+                
+                if len(post2) > max_length:
+                    trim_at = post2[:max_length].rfind('. ')
+                    if trim_at == -1:
+                        trim_at = post2[:max_length].rfind(' ')
+                    if trim_at == -1:
+                        trim_at = max_length
+                    post2 = post2[:trim_at].strip()
+            else:
+                post1 = ""
+                post2 = ""
+            
+            # Assemble final chunks (skip empty posts)
+            chunks = []
+            if post1:
+                chunks.append(post1)
+            if post2:
+                chunks.append(post2)
+            chunks.append(post3)
         
         # Final logging: Show what we're about to post
         logging.info(f"Final thread structure: {len(chunks)} posts")
