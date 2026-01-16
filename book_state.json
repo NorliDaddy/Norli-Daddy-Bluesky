@@ -223,10 +223,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/lazar-9788202906573",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mcevsfqu332o",
       "reviewed_at": "2026-01-14T10:55:06.031790+00:00"
+    },
+    {
+      "ean": "9788234726699",
+      "title": "M\u00e5neporten",
+      "author": "Amanda Geard",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/maneporten-9788234726699",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mcjwkzhymr2o",
+      "reviewed_at": "2026-01-16T10:52:10.703700+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 28,
-    "total_posted": 28
+    "total_reviews": 29,
+    "total_posted": 29
   }
 }
