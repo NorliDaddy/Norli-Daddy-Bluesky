@@ -231,10 +231,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/maneporten-9788234726699",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mcjwkzhymr2o",
       "reviewed_at": "2026-01-16T10:52:10.703700+00:00"
+    },
+    {
+      "ean": "9788234016042",
+      "title": "Br\u00f8d fr\u00e5 englane",
+      "author": "Patti Smith",
+      "norli_url": "https://www.norli.no/boker/dokumentar-og-fakta/historie-og-dokumentar/biografier-og-memoarer/brod-fra-englane-9788234016042",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mcmghccagp2l",
+      "reviewed_at": "2026-01-17T10:41:45.142189+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 29,
-    "total_posted": 29
+    "total_reviews": 30,
+    "total_posted": 30
   }
 }
