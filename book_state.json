@@ -247,10 +247,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/husrom-og-hjerterom-9788205618565",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mcrg4jkqkx2p",
       "reviewed_at": "2026-01-19T10:19:02.897007+00:00"
+    },
+    {
+      "ean": "9788202845704",
+      "title": "Babystrikk",
+      "author": "Ane-Karine M\u00f8rk",
+      "norli_url": "https://www.norli.no/boker/hobby-og-fritid/strikk-hjem-og-hobby/handarbeid-og-strikking/babystrikk-1-9788202845704",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mctwkagy4m2u",
+      "reviewed_at": "2026-01-20T10:18:21.847018+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 31,
-    "total_posted": 31
+    "total_reviews": 32,
+    "total_posted": 32
   }
 }
