@@ -263,10 +263,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/krimboker/interregnum-9788203459474",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mcwgxfa5l322",
       "reviewed_at": "2026-01-21T10:17:22.046607+00:00"
+    },
+    {
+      "ean": "9788248942818",
+      "title": "Den argentinske datteren",
+      "author": "Soraya Lane",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/den-argentinske-datteren-9788248942818",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mcyxhfp45b2p",
+      "reviewed_at": "2026-01-22T10:17:59.351741+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 33,
-    "total_posted": 33
+    "total_reviews": 34,
+    "total_posted": 34
   }
 }
