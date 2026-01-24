@@ -279,10 +279,18 @@
       "norli_url": "https://www.norli.no/boker/dokumentar-og-fakta/historie-og-dokumentar/debatt-og-samfunn/pa-min-vakt-9788205618152",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3md3hrwhy7l2u",
       "reviewed_at": "2026-01-23T10:15:31.586874+00:00"
+    },
+    {
+      "ean": "9788205598980",
+      "title": "Diamanter og rust - en Hanne Wilhelmsen-roman",
+      "author": "Anne Holt",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/krimboker/diamanter-og-rust-9788205598980",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3md5y3djpok2m",
+      "reviewed_at": "2026-01-24T10:12:26.988959+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 35,
-    "total_posted": 35
+    "total_reviews": 36,
+    "total_posted": 36
   }
 }
