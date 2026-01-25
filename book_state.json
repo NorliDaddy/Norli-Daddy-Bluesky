@@ -287,10 +287,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/krimboker/diamanter-og-rust-9788205598980",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3md5y3djpok2m",
       "reviewed_at": "2026-01-24T10:12:26.988959+00:00"
+    },
+    {
+      "ean": "9788249530700",
+      "title": "Hvor er de voksne?",
+      "author": "Nina Lykke",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/hvor-er-de-voksne-9788249530700",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mdaikrujdl2y",
+      "reviewed_at": "2026-01-25T10:12:44.425282+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 36,
-    "total_posted": 36
+    "total_reviews": 37,
+    "total_posted": 37
   }
 }
