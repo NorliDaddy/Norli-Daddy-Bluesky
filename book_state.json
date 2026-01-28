@@ -311,10 +311,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/krimboker/skadeskutt-15-9788284320939",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mdfjrj45572u",
       "reviewed_at": "2026-01-27T10:17:42.675849+00:00"
+    },
+    {
+      "ean": "9788205610255",
+      "title": "Hun som ble igjen",
+      "author": "Riley Sager",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/krimboker/hun-som-ble-igjen-9788205610255",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mdi2cg6mhh2j",
+      "reviewed_at": "2026-01-28T10:18:49.150237+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 39,
-    "total_posted": 39
+    "total_reviews": 40,
+    "total_posted": 40
   }
 }
