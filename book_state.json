@@ -319,10 +319,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/krimboker/hun-som-ble-igjen-9788205610255",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mdi2cg6mhh2j",
       "reviewed_at": "2026-01-28T10:18:49.150237+00:00"
+    },
+    {
+      "ean": "9788203461187",
+      "title": "Den lille beredskapsboken - det du m\u00e5 vite for \u00e5 bli mindre bekymret og bedre forberedt",
+      "author": "Henning Carr Ekroll",
+      "norli_url": "https://www.norli.no/boker/dokumentar-og-fakta/historie-og-dokumentar/debatt-og-samfunn/den-lille-beredskapsboken-9788203461187",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mdkl7xy6e32y",
+      "reviewed_at": "2026-01-29T10:27:00.333671+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 40,
-    "total_posted": 40
+    "total_reviews": 41,
+    "total_posted": 41
   }
 }
