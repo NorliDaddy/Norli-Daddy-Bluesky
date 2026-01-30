@@ -327,10 +327,18 @@
       "norli_url": "https://www.norli.no/boker/dokumentar-og-fakta/historie-og-dokumentar/debatt-og-samfunn/den-lille-beredskapsboken-9788203461187",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mdkl7xy6e32y",
       "reviewed_at": "2026-01-29T10:27:00.333671+00:00"
+    },
+    {
+      "ean": "9788202890339",
+      "title": "Grunnboka - kokkeskolen",
+      "author": "Eyvind Hellstr\u00f8m",
+      "norli_url": "https://www.norli.no/boker/hobby-og-fritid/mat-og-drikke/kokeboker/grunnboka-9788202890339",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mdn3jb55kl2y",
+      "reviewed_at": "2026-01-30T10:23:51.066618+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 41,
-    "total_posted": 41
+    "total_reviews": 42,
+    "total_posted": 42
   }
 }
