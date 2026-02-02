@@ -351,10 +351,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/borte-fra-verden-9788203457654",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mds3yi6uw52c",
       "reviewed_at": "2026-02-01T10:15:40.586692+00:00"
+    },
+    {
+      "ean": "9788248938279",
+      "title": "Landet som ble for rikt",
+      "author": "Martin Bech Holte",
+      "norli_url": "https://www.norli.no/boker/dokumentar-og-fakta/historie-og-dokumentar/debatt-og-samfunn/landet-som-ble-for-rikt-9788248938279",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mdunjmneth25",
+      "reviewed_at": "2026-02-02T10:34:48.809367+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 44,
-    "total_posted": 44
+    "total_reviews": 45,
+    "total_posted": 45
   }
 }
