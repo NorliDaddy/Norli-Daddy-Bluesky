@@ -375,10 +375,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/den-argentinske-datteren-9788248944300",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mdzo6knvdw2m",
       "reviewed_at": "2026-02-04T10:29:50.092931+00:00"
+    },
+    {
+      "ean": "9788234725425",
+      "title": "Duellanten - mannen og myten Tordenskjold",
+      "author": "Alexander Wisting",
+      "norli_url": "https://www.norli.no/boker/dokumentar-og-fakta/historie-og-dokumentar/biografier-og-memoarer/duellanten-9788234725425",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3me46qphk7d2u",
+      "reviewed_at": "2026-02-05T10:31:38.208071+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 47,
-    "total_posted": 47
+    "total_reviews": 48,
+    "total_posted": 48
   }
 }
