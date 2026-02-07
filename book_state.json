@@ -1,16 +1,7 @@
 {
-  "reviewed_books": [
-    {
-      "ean": "9788202869885",
-      "title": "Ned fra himmelen",
-      "author": "",
-      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/ned-fra-himmelen-9788202869885",
-      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mebb6hzbvr27",
-      "reviewed_at": "2026-02-07T10:58:26.380865+00:00"
-    }
-  ],
+  "reviewed_books": [],
   "stats": {
-    "total_reviews": 1,
-    "total_posted": 1
+    "total_reviews": 0,
+    "total_posted": 0
   }
 }
