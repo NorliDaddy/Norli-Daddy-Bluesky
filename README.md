@@ -4,23 +4,25 @@ An automated bot that discovers new books from Norli.no, generates flirty and fu
 
 ## How It Works
 
-1. **Scrapes Norli.no** for the latest new books from [Månedens nyheter](https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter)
-2. **Selects random book** from the list that hasn't been reviewed yet
-3. **Extracts book details**: title, author, year, language, description, and customer reviews
-4. **Generates sexy review** using GPT-4o with a flirty "book daddy" persona in Norwegian
-5. **Posts to Bluesky** with the entertaining book review
+1. **Fetches book list** from Norli's GraphQL API for [Månedens nyheter](https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter)
+2. **Filters for suitable books** by checking target group (adults) and categories (fiction, not crime/non-fiction)
+3. **Extracts book details** via GraphQL API: title, description, categories, and book cover image
+4. **Transforms image URLs** from checkout.norli.no to www.norli.no format for external embedding
+5. **Generates sexy review** using GPT-4o with a flirty "book daddy" persona in Norwegian
+6. **Posts to Bluesky** with book cover image and entertaining review thread
 
 ## Features
 
-- **JavaScript rendering**: Uses Selenium WebDriver to handle Norli.no's React-based SPA
-- **Smart scraping**: Extracts comprehensive book information including cover images
+- **GraphQL API integration**: Fast and reliable book data fetching from Norli's API
+- **Smart filtering**: Checks target group (adult) and categories to select suitable books for flirty reviews
+- **Image URL transformation**: Converts internal image URLs to external-embeddable format
 - **AI-powered reviews**: Uses GPT-4o via Azure OpenAI (GitHub Models) to generate entertaining, flirty reviews in Norwegian
-- **Book cover images**: Automatically includes book cover images in Bluesky posts
+- **Book cover images**: Automatically includes high-quality book cover images in Bluesky posts
 - **Thread support**: Automatically splits long reviews into Bluesky threads (290 char limit)
 - **EAN-based tracking**: Tracks reviewed books by ISBN-13 (EAN) to avoid duplicates
 - **Bluesky post links**: Stores links to all posted reviews for reference
 - **Daily automation**: Runs automatically via GitHub Actions
-- **Smart cancellation**: Exits gracefully when no new books are available
+- **Smart cancellation**: Exits gracefully when no suitable books are available
 - **Statistics**: Tracks total reviews generated and posted with full history
 
 ## Setup
@@ -47,11 +49,9 @@ python-dotenv
 atproto
 beautifulsoup4
 lxml
-selenium
-webdriver-manager
 ```
 
-**Note**: ChromeDriver is automatically downloaded and managed by `webdriver-manager`.
+**Note**: The bot primarily uses Norli's GraphQL API for data fetching. BeautifulSoup is used for parsing HTML descriptions and optional page scraping fallbacks.
 
 ### 3. GitHub Secrets
 
@@ -162,9 +162,10 @@ Statistics are stored in `book_state.json`:
 **"No books found" or "No new books to review"**:
 - All books on the monthly page have been reviewed (bot exits with code 78)
 - Wait for Norli.no to add new books to [Månedens nyheter](https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter)
-- Norli.no might have changed their HTML structure
-- Check the CSS selectors in `scrape_book_list()` and `scrape_book_details()`
-- Enable debug logging to see what's being scraped
+- Norli.no might have changed their GraphQL API structure
+- Check the GraphQL query in `scrape_book_list()` and `scrape_book_details()`
+- Verify API endpoint is still `https://www.norli.no/graphql`
+- Enable debug logging to see API responses
 
 **"Azure OpenAI API error"**:
 - Check your `KEY_GITHUB_TOKEN` is valid
@@ -172,16 +173,11 @@ Statistics are stored in `book_state.json`:
 - Check GitHub Models API status
 - Ensure GPT-4o model is available
 
-**"ChromeDriver issues"**:
-- WebDriver Manager should auto-download ChromeDriver
-- On GitHub Actions, Chrome is pre-installed
-- Locally, ensure Chrome/Chromium is installed
-- Check firewall isn't blocking driver downloads
-
 **"Could not extract book details"**:
-- Book page HTML might vary
-- The scraper tries multiple CSS selectors
-- Some books may have incomplete information
+- GraphQL API response structure might have changed
+- Check that media_gallery and small_image fields are still available
+- Image URL transformation may need adjustment if Norli changes URL patterns
+- Some books may have incomplete information in API
 
 **"Bluesky posting failed"**:
 - Check credentials are correct
@@ -210,18 +206,16 @@ pip install -r requirements.txt
 python src/main.py
 ```
 
-**Note**: Make sure Chrome or Chromium browser is installed for Selenium WebDriver.
+## API & Data Extraction Notes
 
-## Web Scraping Notes
-
-- **Selenium WebDriver**: Required because Norli.no is a React-based Single Page Application (SPA)
-- **Headless Chrome**: Runs in headless mode for automation (no GUI)
-- **JavaScript rendering**: Waits 5 seconds for React to load content before scraping
-- **BeautifulSoup + lxml**: Parses the rendered HTML after JavaScript execution
-- **Multiple selectors**: Tries various CSS selectors as fallbacks for robustness
-- **Proper User-Agent**: Mimics real browser to avoid blocking
-- **EAN extraction**: Extracts ISBN-13 from URL patterns like `-9788202806453`
-- **Book cover images**: Extracts high-resolution images (728px width) from carousel gallery
+- **GraphQL API**: Primary data source for book lists, details, and images from Norli.no
+- **Image URL transformation**: Converts checkout.norli.no URLs to www.norli.no format for external embedding
+- **Cache path removal**: Strips `/cache/{hash}/` from image URLs to match working format
+- **BeautifulSoup + lxml**: Used for parsing HTML descriptions and optional page scraping
+- **Multiple fallbacks**: Tries media_gallery → small_image → page scraping for images
+- **EAN extraction**: Extracts ISBN-13 from URL patterns like `-9788202869885`
+- **Category filtering**: Queries GraphQL for book categories to determine suitability
+- **Target group validation**: Ensures books are for adults ("Voksen") before reviewing
 
 ## File Descriptions
 
