@@ -1,24 +1,7 @@
 {
-  "reviewed_books": [
-    {
-      "ean": "9788203453625",
-      "title": "Guden over skogene",
-      "author": "Liz Moore",
-      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/krimboker/guden-over-skogene-9788203453625",
-      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3meazbukwpz2z",
-      "reviewed_at": "2026-02-07T08:37:10.765860+00:00"
-    },
-    {
-      "ean": "9788249530700",
-      "title": "Hvor er de voksne?",
-      "author": "Nina Lykke",
-      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/hvor-er-de-voksne-9788249530700",
-      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3meazgyd73b22",
-      "reviewed_at": "2026-02-07T08:40:02.302262+00:00"
-    }
-  ],
+  "reviewed_books": [],
   "stats": {
-    "total_reviews": 2,
-    "total_posted": 2
+    "total_reviews": 0,
+    "total_posted": 0
   }
 }

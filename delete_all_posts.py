@@ -3,9 +3,11 @@
 Delete all posts from Bluesky account - use with caution!
 """
 
+import json
 import logging
 import os
 import time
+from pathlib import Path
 from dotenv import load_dotenv
 from atproto import Client
 
@@ -119,6 +121,23 @@ def delete_all_posts():
         logging.info(f"✅ Successfully deleted: {deleted_count} posts")
         logging.info(f"❌ Failed: {failed_count} posts")
         logging.info(f"{'='*60}\n")
+        
+        # Reset book_state.json if deletions were successful
+        if deleted_count > 0:
+            try:
+                state_file = Path("book_state.json")
+                initial_state = {
+                    "reviewed_books": [],
+                    "stats": {
+                        "total_reviews": 0,
+                        "total_posted": 0
+                    }
+                }
+                with open(state_file, 'w', encoding='utf-8') as f:
+                    json.dump(initial_state, f, indent=2, ensure_ascii=False)
+                logging.info("🔄 Reset book_state.json to initial state\n")
+            except Exception as e:
+                logging.error(f"⚠️  Failed to reset book_state.json: {e}\n")
         
     except Exception as e:
         logging.error(f"Error during deletion: {e}")

@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import random
+import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,13 +18,6 @@ import requests
 from bs4 import BeautifulSoup
 from atproto import Client, models
 from dotenv import load_dotenv
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 
 load_dotenv()
 
@@ -37,7 +31,6 @@ BSKY_HANDLE = os.getenv("BSKY_HANDLE")
 BSKY_PASSWORD = os.getenv("BSKY_PASSWORD")
 
 # URLs
-NORLI_NEW_BOOKS_URL = "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter"
 NORLI_GRAPHQL_API = "https://www.norli.no/graphql"
 
 # Category filtering - Norli URL path segments that indicate suitable books
@@ -45,8 +38,6 @@ SUITABLE_CATEGORIES = [
     'skjonnlitteratur',  # Fiction
     'skjønnlitteratur',  # Fiction (Norwegian spelling)
     'romaner',  # Novels
-    'krimboker',  # Crime/Mystery
-    'krimbøker',  # Crime/Mystery (Norwegian spelling)
     'fantasy',
     'science-fiction',
     'spenning',  # Suspense/Thriller
@@ -54,37 +45,39 @@ SUITABLE_CATEGORIES = [
     'psykologiske-thrillere',  # Psychological thrillers
     'psykologiske thrillere',  # Psychological thrillers (space)
     'feelgood',  # Feel-good romance
-    'krim og spenning',  # Crime and suspense
-    'krim-og-spenning',  # Crime and suspense (hyphen)
     'norsk skjønnlitteratur',  # Norwegian fiction
     'norsk-skjonnlitteratur',  # Norwegian fiction
     'nye romaner',  # New novels
     'nye-romaner',  # New novels (hyphen)
-    'nye krimbøker',  # New crime books
-    'nye-krimboker',  # New crime books (hyphen)
     'populære feelgood-romaner',  # Popular feelgood novels
     'populaere-feelgood-romaner',  # Popular feelgood novels
     'nyheter og bestselgere - romaner',  # News and bestsellers - novels
-    'nyheter og bestselgere - krim og spenning',  # News and bestsellers - crime
     'nyheter-og-bestselgere-skjonnlitteratur',  # News and bestsellers - fiction
-    'nyheter-og-bestselgere-krim-og-spenning',  # News and bestsellers - crime
     'topp 10 romaner',  # Top 10 novels
     'topp-10-romaner',  # Top 10 novels (hyphen)
-    'topp 10 krimbøker',  # Top 10 crime books
-    'topp-10-krimboker',  # Top 10 crime books (hyphen)
     'topp 50 romaner',  # Top 50 novels
     'topp-50-romaner',  # Top 50 novels (hyphen)
     'topp 200 skjønnlitteratur',  # Top 200 fiction
     'topp-200-skjonnlitteratur',  # Top 200 fiction (hyphen)
-    'påskekrim',  # Easter crime
-    'paskekrim',  # Easter crime (alternative spelling)
-    'krimfestivalen',  # Crime festival
-    'adresseavisen-arets-beste-krimboker',  # Adresseavisen's best crime books
     'morgenbladet-arets-beste-romaner-og-krim',  # Morgenbladet's best novels and crime
 ]
 
 # URL segments that indicate unsuitable books (non-fiction, etc.)
 UNSUITABLE_CATEGORIES = [
+    'krimboker',  # Crime/Mystery
+    'krimbøker',  # Crime/Mystery (Norwegian spelling)
+    'krim og spenning',  # Crime and suspense
+    'krim-og-spenning',  # Crime and suspense (hyphen)
+    'nye krimbøker',  # New crime books
+    'nye-krimboker',  # New crime books (hyphen)
+    'nyheter og bestselgere - krim og spenning',  # News and bestsellers - crime
+    'nyheter-og-bestselgere-krim-og-spenning',  # News and bestsellers - crime
+    'topp 10 krimbøker',  # Top 10 crime books
+    'topp-10-krimboker',  # Top 10 crime books (hyphen)
+    'påskekrim',  # Easter crime
+    'paskekrim',  # Easter crime (alternative spelling)
+    'krimfestivalen',  # Crime festival
+    'adresseavisen-arets-beste-krimboker',  # Adresseavisen's best crime books
     'fagboker',  # Academic books
     'larebøker',  # Textbooks
     'sport',
@@ -150,112 +143,87 @@ STATE_FILE = Path("book_state.json")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-def get_selenium_driver():
-    """Create a headless Selenium Chrome driver"""
-    chrome_options = Options()
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--window-size=1920,1080')
-    chrome_options.add_argument('user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
-    
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    return driver
-
-
 def scrape_book_list():
-    """Scrape the list of new books from Norli.no using Selenium (JavaScript rendering)"""
-    logging.info(f"Fetching book list from {NORLI_NEW_BOOKS_URL}")
+    """Get book list using GraphQL API - no Selenium needed!"""
+    logging.info("Fetching book list from Norli GraphQL API")
     
-    driver = None
+    query = """
+    query getCategoryList($filters: CategoryFilterInput) {
+      categoryList(filters: $filters) {
+        id
+        name
+        url_path
+        products(pageSize: 200) {
+          items {
+            name
+            url_key
+            sku
+          }
+          total_count
+        }
+      }
+    }
+    """
+    
+    variables = {
+        "filters": {
+            "url_key": {"eq": "manedens-nyheter"}
+        }
+    }
+    
+    payload = {
+        "query": query,
+        "variables": variables,
+        "operationName": "getCategoryList"
+    }
+    
+    headers = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+        'store': 'pwa'
+    }
+    
     try:
-        driver = get_selenium_driver()
-        driver.get(NORLI_NEW_BOOKS_URL)
+        response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=15)
+        response.raise_for_status()
         
-        # Wait for content to load (adjust selector as needed)
-        time.sleep(5)  # Give React time to render
+        data = response.json()
         
-        # Get page source after JavaScript execution
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        if 'data' in data and 'categoryList' in data['data']:
+            categories = data['data']['categoryList']
+            if categories and len(categories) > 0:
+                category = categories[0]
+                products = category.get('products', {}).get('items', [])
+                
+                # Return url_keys (we'll work with these instead of full URLs)
+                url_keys = [product.get('url_key') for product in products if product.get('url_key')]
+                
+                logging.info(f"Found {len(url_keys)} books from GraphQL API")
+                logging.info(f"Total books in category: {category.get('products', {}).get('total_count', 0)}")
+                return url_keys
         
-        # Find all book links
-        book_links = []
-        
-        # Try multiple possible selectors
-        for selector in [
-            'a[href*="/boker/"]',
-            '.product-item a',
-            '.book-item a',
-            'article a[href*="/boker/"]',
-            '[data-testid*="product"] a',
-            '.ProductItem a'
-        ]:
-            elements = soup.select(selector)
-            if elements:
-                for link in elements:
-                    href = link.get('href')
-                    if href and '/boker/' in href and '-978' in href:  # ISBN pattern
-                        # Make absolute URL
-                        if href.startswith('/'):
-                            href = f"https://www.norli.no{href}"
-                        if href not in book_links:
-                            book_links.append(href)
-        
-        # Remove duplicates
-        book_links = list(set(book_links))
-        
-        logging.info(f"Found {len(book_links)} book URLs")
-        return book_links
+        logging.error(f"Unexpected API response: {data}")
+        return []
         
     except Exception as e:
-        logging.error(f"Error scraping book list: {e}")
+        logging.error(f"Error fetching book list from GraphQL: {e}")
         return []
-    finally:
-        if driver:
-            driver.quit()
 
 
-def extract_url_key_from_url(book_url):
-    """Extract the URL key from a Norli book URL"""
-    # Example: https://www.norli.no/boker/skjonnlitteratur/romaner/den-bedratte-kvinnen-9788253044989
-    # Returns: den-bedratte-kvinnen-9788253044989
-    parts = book_url.rstrip('/').split('/')
-    return parts[-1] if parts else None
-
-
-def get_book_categories_from_norli(book_url):
-    """Fetch book categories from Norli's GraphQL API"""
-    categories = []
-    
-    # Extract URL path segments as categories (fast and reliable)
-    url_path = book_url.replace('https://www.norli.no/boker/', '').lower()
-    path_segments = [seg for seg in url_path.split('/') if seg and not seg.startswith('978')]
-    
-    if path_segments:
-        categories.extend(path_segments)
-        logging.info(f"Categories from URL path: {path_segments}")
-    
-    # Try to fetch additional data from Norli GraphQL API
-    url_key = extract_url_key_from_url(book_url)
-    if not url_key:
-        logging.warning(f"Could not extract URL key from: {book_url}")
-        return categories
-    
+def check_target_group(url_key):
+    """Check if book's target_group is 'Voksen' (Adult) - returns True if suitable, False otherwise"""
     try:
-        # Simplified GraphQL query to get product categories
         query = """
-        query getProductCategories($urlKey: String!) {
+        query getTargetGroup($urlKey: String!) {
           products(filter: {url_key: {eq: $urlKey}}) {
             items {
-              id
-              uid
-              name
-              categories {
-                id
-                uid
-                name
+              convert_product_page_attributes {
+                code
+                label
+                value
+              }
+              norli_junior {
+                target_group
               }
             }
           }
@@ -264,7 +232,86 @@ def get_book_categories_from_norli(book_url):
         
         variables = {"urlKey": url_key}
         
-        graphql_payload = {
+        payload = {
+            "query": query,
+            "variables": variables,
+            "operationName": "getTargetGroup"
+        }
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+            'store': 'pwa'
+        }
+        
+        response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        if 'data' in data and 'products' in data['data']:
+            items = data['data']['products'].get('items', [])
+            if items:
+                product = items[0]
+                
+                # Check norli_junior.target_group first (it's an array)
+                norli_junior = product.get('norli_junior', {})
+                if norli_junior and 'target_group' in norli_junior:
+                    target_groups = norli_junior['target_group']
+                    if target_groups and 'Voksen' in target_groups:
+                        logging.info(f"✅ Target group: Voksen (Adult)")
+                        return True
+                    else:
+                        logging.info(f"❌ Target group: {target_groups} (Not adult)")
+                        return False
+                
+                # Fallback to convert_product_page_attributes
+                attributes = product.get('convert_product_page_attributes', [])
+                for attr in attributes:
+                    if attr.get('code') == 'target_group':
+                        target_value = attr.get('value', '')
+                        if target_value == 'Voksen':
+                            logging.info(f"✅ Target group: Voksen (Adult)")
+                            return True
+                        else:
+                            logging.info(f"❌ Target group: {target_value} (Not adult)")
+                            return False
+                
+                # If no target_group found, be conservative and reject
+                logging.info(f"⚠️  No target_group found - skipping for safety")
+                return False
+        
+        return False
+        
+    except Exception as e:
+        logging.warning(f"Error checking target_group for {url_key}: {e}")
+        return False
+
+
+def get_book_categories_from_norli(url_key):
+    """Fetch book categories from Norli's GraphQL API using url_key"""
+    categories = []
+    
+    try:
+        query = """
+        query getProductCategories($urlKey: String!) {
+          products(filter: {url_key: {eq: $urlKey}}) {
+            items {
+              id
+              name
+              categories {
+                id
+                name
+                url_path
+              }
+            }
+          }
+        }
+        """
+        
+        variables = {"urlKey": url_key}
+        
+        payload = {
             "query": query,
             "variables": variables,
             "operationName": "getProductCategories"
@@ -276,30 +323,35 @@ def get_book_categories_from_norli(book_url):
             'store': 'pwa'
         }
         
-        response = requests.post(NORLI_GRAPHQL_API, json=graphql_payload, headers=headers, timeout=10)
+        response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=10)
         response.raise_for_status()
         
         data = response.json()
         
         if 'data' in data and 'products' in data['data']:
             items = data['data']['products'].get('items', [])
-            if items and len(items) > 0:
+            if items:
                 product = items[0]
                 norli_categories = product.get('categories', [])
                 if norli_categories:
-                    category_names = [cat.get('name', '').lower() for cat in norli_categories if cat.get('name')]
-                    for cat in category_names:
-                        if cat not in categories:
-                            categories.append(cat)
-                    logging.info(f"Categories from Norli API: {category_names}")
+                    for cat in norli_categories:
+                        cat_name = cat.get('name', '').lower()
+                        cat_path = cat.get('url_path', '').lower()
+                        
+                        if cat_name:
+                            categories.append(cat_name)
+                        
+                        # Extract path segments
+                        if cat_path:
+                            path_parts = [p for p in cat_path.split('/') if p]
+                            categories.extend(path_parts)
+                    
+                    logging.info(f"Categories for {url_key}: {list(set(categories))}")
         
-    except requests.exceptions.RequestException as e:
-        logging.warning(f"Norli GraphQL API error: {e}")
     except Exception as e:
-        logging.warning(f"Unexpected error fetching Norli categories: {e}")
+        logging.warning(f"Error fetching categories for {url_key}: {e}")
     
-    logging.info(f"Final categories for {book_url}: {categories}")
-    return categories
+    return list(set(categories))
 
 
 def is_suitable_for_sexy_review(categories):
@@ -331,185 +383,161 @@ def is_suitable_for_sexy_review(categories):
     return False
 
 
-def scrape_book_details(book_url):
-    """Scrape detailed information about a specific book using Selenium"""
-    logging.info(f"Scraping book details from {book_url}")
+def scrape_book_details(url_key):
+    """Get book details using GraphQL API + light requests scraping"""
+    logging.info(f"Fetching book details for {url_key}")
     
-    driver = None
     try:
-        driver = get_selenium_driver()
-        driver.get(book_url)
+        # First, get data from GraphQL including categories for proper URL construction
+        query = """
+        query getProduct($urlKey: String!) {
+          products(filter: {url_key: {eq: $urlKey}}) {
+            items {
+              id
+              name
+              sku
+              url_key
+              small_image {
+                url
+              }
+              media_gallery {
+                url
+              }
+              description {
+                html
+              }
+              short_description {
+                html
+              }
+              categories {
+                name
+                url_path
+              }
+            }
+          }
+        }
+        """
         
-        # Wait for content to load
-        time.sleep(5)  # Give React time to render
+        variables = {"urlKey": url_key}
         
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        
-        # Extract book information (adjust selectors based on actual Norli HTML)
-        book_data = {
-            'url': book_url,
-            'ean': '',
-            'title': '',
-            'author': '',
-            'year': '',
-            'language': '',
-            'description': '',
-            'reviews': '',
-            'image_url': ''
+        payload = {
+            "query": query,
+            "variables": variables,
+            "operationName": "getProduct"
         }
         
-        # Extract EAN from URL (pattern: -9788202806453)
-        import re
-        ean_match = re.search(r'-(978\d{10})(?:\?|$)', book_url)
-        if ean_match:
-            book_data['ean'] = ean_match.group(1)
+        headers = {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+            'store': 'pwa'
+        }
+        
+        response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=15)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        if 'data' not in data or 'products' not in data['data']:
+            logging.error(f"No product data for {url_key}")
+            return None
+        
+        items = data['data']['products'].get('items', [])
+        if not items:
+            logging.error(f"No product items for {url_key}")
+            return None
+        
+        product = items[0]
+        
+        # Build book URL using category url_path for correct URL structure
+        # Find the most specific category (longest url_path that's not just "boker")
+        categories = product.get('categories', [])
+        category_path = None
+        max_depth = 0
+        
+        for cat in categories:
+            url_path = cat.get('url_path', '')
+            if url_path and url_path != 'boker':
+                depth = url_path.count('/')
+                if depth > max_depth:
+                    max_depth = depth
+                    category_path = url_path
+        
+        # Construct URL: https://www.norli.no/{category_url_path}/{url_key}
+        if category_path:
+            book_url = f"https://www.norli.no/{category_path}/{url_key}"
         else:
-            logging.warning(f"Could not extract EAN from URL: {book_url}")
+            # Fallback to a generic path if no specific category found
+            book_url = f"https://www.norli.no/boker/{url_key}"
         
-        # Try to extract title
-        title_selectors = ['h1', '.product-title', '.book-title', 'h1.title', '[data-testid="product-title"]']
-        for selector in title_selectors:
-            element = soup.select_one(selector)
-            if element:
-                book_data['title'] = element.get_text(strip=True)
-                if book_data['title']:
-                    break
+        logging.info(f"Constructed URL: {book_url}")
         
-        # Try to extract author
-        author_selectors = [
-            '.productFullDetailNorli-authors-cdP a',  # Norli specific
-            '.productFullDetailNorli-authors-cdP',    # Norli specific fallback
-            'a[href*="/forfatter/"]', 
-            '.author', 
-            '.product-author', 
-            'span[itemprop="author"]', 
-            '[data-testid="author"]'
-        ]
-        for selector in author_selectors:
-            element = soup.select_one(selector)
-            if element:
-                book_data['author'] = element.get_text(strip=True)
-                if book_data['author']:
-                    break
+        # Extract description from HTML
+        desc_html = product.get('description', {}).get('html', '')
+        if not desc_html:
+            desc_html = product.get('short_description', {}).get('html', '')
         
-        # Try to extract publication year
-        year_selectors = ['.publication-year', '.year', 'span[itemprop="datePublished"]', '[data-testid="year"]']
-        for selector in year_selectors:
-            element = soup.select_one(selector)
-            if element:
-                text = element.get_text(strip=True)
-                # Extract 4-digit year
-                import re
-                year_match = re.search(r'\b(20\d{2}|19\d{2})\b', text)
-                if year_match:
-                    book_data['year'] = year_match.group(1)
-                    break
+        description = ''
+        if desc_html:
+            soup = BeautifulSoup(desc_html, 'html.parser')
+            description = soup.get_text(separator=' ', strip=True)
         
-        # If no year found, try searching all text
-        if not book_data['year']:
-            import re
-            text = soup.get_text()
-            year_match = re.search(r'\b(202[0-9]|201[0-9])\b', text)
-            if year_match:
-                book_data['year'] = year_match.group(1)
+        # Get image URL
+        image_url = ''
+        media_gallery = product.get('media_gallery', [])
+        if media_gallery:
+            image_url = media_gallery[0].get('url', '')
+        elif product.get('small_image'):
+            image_url = product.get('small_image', {}).get('url', '')
         
-        # Try to extract language
-        language_selectors = ['.language', 'span[itemprop="inLanguage"]', '[data-testid="language"]']
-        for selector in language_selectors:
-            element = soup.select_one(selector)
-            if element:
-                book_data['language'] = element.get_text(strip=True)
-                if book_data['language']:
-                    break
+        # Build initial book data
+        book_data = {
+            'url': book_url,
+            'ean': product.get('sku', ''),
+            'title': product.get('name', ''),
+            'author': '',
+            'year': '',
+            'language': 'Norwegian',
+            'description': description,
+            'reviews': '',
+            'image_url': image_url
+        }
         
-        # Default language if not found
-        if not book_data['language']:
-            book_data['language'] = 'Norwegian'
-        
-        # Try to extract description
-        desc_selectors = [
-            'section[class*="descriptionWrapper"] div[class*="richText"]',  # Norli specific
-            '.richText-root-SHY',  # Norli specific
-            'section[class*="descriptionWrapper"]',  # Norli specific
-            '.description', 
-            '.product-description', 
-            '[itemprop="description"]', 
-            '.book-description', 
-            '[data-testid="description"]'
-        ]
-        for selector in desc_selectors:
-            element = soup.select_one(selector)
-            if element:
-                # Get text from all <p> tags if they exist, otherwise get all text
-                paragraphs = element.find_all('p')
-                if paragraphs:
-                    book_data['description'] = ' '.join([p.get_text(strip=True) for p in paragraphs])
-                else:
-                    book_data['description'] = element.get_text(strip=True)
+        # Light scraping for author and year (not in GraphQL)
+        # Only fetch the page if we need author/year
+        try:
+            page_response = requests.get(book_url, headers=headers, timeout=10)
+            if page_response.status_code == 200:
+                soup = BeautifulSoup(page_response.text, 'html.parser')
                 
-                if len(book_data['description']) > 50:  # Make sure it's substantial
-                    break
-        
-        # Try to extract customer reviews
-        # Look for review sections
-        review_keywords = ['anmeldelse', 'reviews', 'omtale']
-        for keyword in review_keywords:
-            review_sections = soup.find_all(['div', 'section'], string=lambda t: t and keyword.lower() in t.lower())
-            if review_sections:
-                for section in review_sections:
-                    parent = section.find_parent(['div', 'section'])
-                    if parent:
-                        reviews_text = parent.get_text(separator='\n', strip=True)
-                        if len(reviews_text) > 100:  # Has substantial content
-                            book_data['reviews'] = reviews_text
+                # Extract author
+                author_selectors = [
+                    '.productFullDetailNorli-authors-cdP a',
+                    'a[href*="/forfatter/"]',
+                    '.author',
+                    'span[itemprop="author"]'
+                ]
+                for selector in author_selectors:
+                    element = soup.select_one(selector)
+                    if element:
+                        book_data['author'] = element.get_text(strip=True)
+                        if book_data['author']:
                             break
-                if book_data['reviews']:
-                    break
+                
+                # Extract year from page text
+                if not book_data['year']:
+                    text = soup.get_text()
+                    year_match = re.search(r'\b(202[0-9]|201[0-9])\b', text)
+                    if year_match:
+                        book_data['year'] = year_match.group(1)
+        except Exception as e:
+            logging.warning(f"Could not fetch additional details: {e}")
         
-        # Also try direct review selectors
-        if not book_data['reviews']:
-            review_selectors = ['.reviews', '.customer-reviews', '.anmeldelser', '#reviews', '[data-testid="reviews"]']
-            for selector in review_selectors:
-                element = soup.select_one(selector)
-                if element:
-                    book_data['reviews'] = element.get_text(separator='\n', strip=True)
-                    if len(book_data['reviews']) > 50:
-                        break
-        
-        # Try to extract book cover image
-        image_selectors = [
-            '.carouselGallery-image-gHz[alt="image-product"]',  # Norli specific
-            'img[alt="image-product"]',
-            '.product-image img',
-            '[itemprop="image"]',
-            '.book-cover img'
-        ]
-        for selector in image_selectors:
-            img_elements = soup.select(selector)
-            for img in img_elements:
-                src = img.get('src', '')
-                # Look for the large image, not the placeholder or preview
-                if src and '/media/catalog/product/' in src and 'width=728' in src:
-                    # Make absolute URL if needed
-                    if src.startswith('/'):
-                        book_data['image_url'] = f"https://www.norli.no{src}"
-                    else:
-                        book_data['image_url'] = src
-                    break
-            if book_data['image_url']:
-                break
-        
-        logging.info(f"Extracted book: {book_data['title']} by {book_data['author']}")
-        if book_data['image_url']:
-            logging.info(f"Found book cover image: {book_data['image_url']}")
+        logging.info(f"Extracted: {book_data['title']}" + (f" by {book_data['author']}" if book_data['author'] else ""))
         return book_data
         
     except Exception as e:
-        logging.error(f"Error scraping book details: {e}")
+        logging.error(f"Error fetching book details: {e}")
         return None
-    finally:
-        if driver:
-            driver.quit()
 
 
 def generate_book_review(book_data):
@@ -1035,25 +1063,25 @@ def main():
     logging.info(f"All-time stats: {stats['total_reviews']} reviews generated, {stats['total_posted']} posted")
     
     # Get list of books
-    book_urls = scrape_book_list()
+    url_keys = scrape_book_list()
     
-    if not book_urls:
+    if not url_keys:
         logging.error("No books found on the monthly new books page!")
         logging.info("Canceling run - no books available")
         exit(78)  # Exit code 78 means "no new books to review"
     
-    # Extract EANs from URLs and filter out already reviewed books
-    import re
+    # Extract EANs from url_keys and filter out already reviewed books
     new_books = []
-    for url in book_urls:
-        ean_match = re.search(r'-(978\d{10})(?:\?|$)', url)
+    for url_key in url_keys:
+        # EAN is embedded in url_key (last 13 digits after hyphen)
+        ean_match = re.search(r'-?(978\d{10})$', url_key)
         if ean_match:
             ean = ean_match.group(1)
             if ean not in reviewed_eans:
-                new_books.append((url, ean))
+                new_books.append((url_key, ean))
         else:
             # If we can't extract EAN, skip it
-            logging.debug(f"Skipping URL without EAN: {url}")
+            logging.debug(f"Skipping url_key without EAN: {url_key}")
     
     if not new_books:
         logging.info("🛑 No new books to review! All books on the page have been reviewed.")
@@ -1062,40 +1090,49 @@ def main():
     
     logging.info(f"Found {len(new_books)} new books to review (not yet reviewed by EAN)")
     
-    # Filter books by category - check if they're suitable for sexy reviews
-    # STOP at first suitable book (no need to process all 117 books)
-    logging.info("\n🔍 Checking book categories to find first suitable book for sexy review...")
-    selected_url = None
+    # Filter books by target group and category - check if they're suitable for sexy reviews
+    # STOP at first suitable book (no need to process all books)
+    logging.info("\n🔍 Checking books to find first suitable book for sexy review...")
+    selected_url_key = None
     selected_ean = None
     selected_categories = None
     
-    for url, ean in new_books:
-        categories = get_book_categories_from_norli(url)
+    for url_key, ean in new_books:
+        logging.info(f"\n📚 Checking: {url_key}")
+        
+        # First check target_group - must be 'Voksen' (Adult)
+        if not check_target_group(url_key):
+            logging.info(f"  ❌ Skipping: Not for adults")
+            time.sleep(0.3)
+            continue
+        
+        # Then check categories
+        categories = get_book_categories_from_norli(url_key)
         if is_suitable_for_sexy_review(categories):
             # Found a suitable book - use it immediately!
-            selected_url = url
+            selected_url_key = url_key
             selected_ean = ean
             selected_categories = categories
-            logging.info(f"  ✅ Found suitable book: {url}")
+            logging.info(f"  ✅ Found suitable book: {url_key}")
             logging.info(f"📖 Categories: {selected_categories}")
             break  # Stop processing - we have our book!
         else:
-            logging.info(f"  ❌ Skipping: {url}")
+            logging.info(f"  ❌ Skipping: Unsuitable categories")
         
         # Small delay to be nice to API
         time.sleep(0.3)
     
-    if not selected_url:
+    if not selected_url_key:
         logging.info("\n🛑 No suitable books found for sexy reviews today!")
         logging.info("All available books are in categories that don't fit the flirty 'book daddy' style.")
         logging.info("Skipping post for today - will try again tomorrow.")
         exit(78)  # Exit code 78 means "no suitable books to review"
     
     logging.info(f"\n✅ Selected first suitable book!")
-    logging.info(f"📚 URL: {selected_url}")
+    logging.info(f"📚 URL key: {selected_url_key}")
     
-    # Scrape book details
-    book_data = scrape_book_details(selected_url)
+    # Get book details
+    book_data = scrape_book_details(selected_url_key)
     
     if not book_data or not book_data['title']:
         logging.error("Could not extract book details!")
@@ -1122,7 +1159,7 @@ def main():
             "ean": book_data['ean'],
             "title": book_data['title'],
             "author": book_data['author'],
-            "norli_url": selected_url,
+            "norli_url": book_data['url'],
             "bluesky_post": post_url,
             "reviewed_at": datetime.now(timezone.utc).isoformat()
         }
