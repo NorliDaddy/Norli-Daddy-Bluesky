@@ -149,3 +149,4 @@ dist
 
 # testing locally
 today/
+.DS_Store

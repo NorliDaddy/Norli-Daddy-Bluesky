@@ -11,6 +11,7 @@ import random
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+import urllib.parse
 
 import requests
 from bs4 import BeautifulSoup
@@ -37,6 +38,111 @@ BSKY_PASSWORD = os.getenv("BSKY_PASSWORD")
 
 # URLs
 NORLI_NEW_BOOKS_URL = "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter"
+NORLI_GRAPHQL_API = "https://www.norli.no/graphql"
+
+# Category filtering - Norli URL path segments that indicate suitable books
+SUITABLE_CATEGORIES = [
+    'skjonnlitteratur',  # Fiction
+    'skjønnlitteratur',  # Fiction (Norwegian spelling)
+    'romaner',  # Novels
+    'krimboker',  # Crime/Mystery
+    'krimbøker',  # Crime/Mystery (Norwegian spelling)
+    'fantasy',
+    'science-fiction',
+    'spenning',  # Suspense/Thriller
+    'noveller',  # Novellas/Short stories
+    'psykologiske-thrillere',  # Psychological thrillers
+    'psykologiske thrillere',  # Psychological thrillers (space)
+    'feelgood',  # Feel-good romance
+    'krim og spenning',  # Crime and suspense
+    'krim-og-spenning',  # Crime and suspense (hyphen)
+    'norsk skjønnlitteratur',  # Norwegian fiction
+    'norsk-skjonnlitteratur',  # Norwegian fiction
+    'nye romaner',  # New novels
+    'nye-romaner',  # New novels (hyphen)
+    'nye krimbøker',  # New crime books
+    'nye-krimboker',  # New crime books (hyphen)
+    'populære feelgood-romaner',  # Popular feelgood novels
+    'populaere-feelgood-romaner',  # Popular feelgood novels
+    'nyheter og bestselgere - romaner',  # News and bestsellers - novels
+    'nyheter og bestselgere - krim og spenning',  # News and bestsellers - crime
+    'nyheter-og-bestselgere-skjonnlitteratur',  # News and bestsellers - fiction
+    'nyheter-og-bestselgere-krim-og-spenning',  # News and bestsellers - crime
+    'topp 10 romaner',  # Top 10 novels
+    'topp-10-romaner',  # Top 10 novels (hyphen)
+    'topp 10 krimbøker',  # Top 10 crime books
+    'topp-10-krimboker',  # Top 10 crime books (hyphen)
+    'topp 50 romaner',  # Top 50 novels
+    'topp-50-romaner',  # Top 50 novels (hyphen)
+    'topp 200 skjønnlitteratur',  # Top 200 fiction
+    'topp-200-skjonnlitteratur',  # Top 200 fiction (hyphen)
+    'påskekrim',  # Easter crime
+    'paskekrim',  # Easter crime (alternative spelling)
+    'krimfestivalen',  # Crime festival
+    'adresseavisen-arets-beste-krimboker',  # Adresseavisen's best crime books
+    'morgenbladet-arets-beste-romaner-og-krim',  # Morgenbladet's best novels and crime
+]
+
+# URL segments that indicate unsuitable books (non-fiction, etc.)
+UNSUITABLE_CATEGORIES = [
+    'fagboker',  # Academic books
+    'larebøker',  # Textbooks
+    'sport',
+    'sport og fritid - signert',
+    'sport-og-fritid-signert',
+    'trening',  # Fitness/Training
+    'mat-og-drikke',  # Food & Drink
+    'mat og drikke',
+    'mat og drikke - signert',
+    'mat-og-drikke-signert',
+    'kokeboker',  # Cookbooks
+    'helse',  # Health
+    'familie og helse',
+    'familie-og-helse',
+    'selvutvikling',  # Self-help
+    'selvutvikling - signert',
+    'selvutvikling-signert',
+    'livssyn-og-selvutvikling',  # Philosophy/Self-help
+    'livssyn og selvutvikling',
+    'historie-og-dokumentar',  # History/Documentary
+    'historie og dokumentar',
+    'historie',
+    'debatt-og-samfunn',  # Debate/Society
+    'debatt og samfunn',
+    'biografier-og-memoarer',  # Biography/Memoir
+    'biografier og memoarer',
+    'biografier',
+    'krig-og-historie',  # War/History
+    'krig og historie',
+    'politikk',  # Politics
+    'juss',  # Law
+    'økonomi',  # Economics
+    'okonomi',
+    'hobby-og-fritid',  # Hobby
+    'hobby og fritid',
+    'hobby og fritid - signert',
+    'hobby',
+    'barn-og-ungdom',  # Children/Young adult
+    'strikk-hjem-og-hobby',  # Knitting/Home hobby
+    'strikk, hjem og hobby',
+    'handarbeid-og-strikking',  # Handicraft
+    'håndarbeid og strikking',
+    'natur-og-dyr',  # Nature/Animals
+    'natur og dyr',
+    'naturen og oss',
+    'boker-om-naturkrisen',
+    'dokumentar-og-fakta',  # Documentary and facts
+    'dokumentar og fakta',
+    'nyheter og bestselgere - dokumentar og fakta',
+    'nyheter-og-bestselgere-dokumentar-og-fakta',
+    'nyheter og bestselgere - hobby og fritid',
+    'nyheter-og-bestselgere-hobby-og-fritid',
+    'topp 10 dokumentar',
+    'topp-10-dokumentar',
+    'topp 10 dokumentar og fakta',
+    'topp-10-dokumentar-og-fakta',
+    'topp-10-kokeboker',
+]
 
 # State management
 STATE_FILE = Path("book_state.json")
@@ -109,6 +215,120 @@ def scrape_book_list():
     finally:
         if driver:
             driver.quit()
+
+
+def extract_url_key_from_url(book_url):
+    """Extract the URL key from a Norli book URL"""
+    # Example: https://www.norli.no/boker/skjonnlitteratur/romaner/den-bedratte-kvinnen-9788253044989
+    # Returns: den-bedratte-kvinnen-9788253044989
+    parts = book_url.rstrip('/').split('/')
+    return parts[-1] if parts else None
+
+
+def get_book_categories_from_norli(book_url):
+    """Fetch book categories from Norli's GraphQL API"""
+    categories = []
+    
+    # Extract URL path segments as categories (fast and reliable)
+    url_path = book_url.replace('https://www.norli.no/boker/', '').lower()
+    path_segments = [seg for seg in url_path.split('/') if seg and not seg.startswith('978')]
+    
+    if path_segments:
+        categories.extend(path_segments)
+        logging.info(f"Categories from URL path: {path_segments}")
+    
+    # Try to fetch additional data from Norli GraphQL API
+    url_key = extract_url_key_from_url(book_url)
+    if not url_key:
+        logging.warning(f"Could not extract URL key from: {book_url}")
+        return categories
+    
+    try:
+        # Simplified GraphQL query to get product categories
+        query = """
+        query getProductCategories($urlKey: String!) {
+          products(filter: {url_key: {eq: $urlKey}}) {
+            items {
+              id
+              uid
+              name
+              categories {
+                id
+                uid
+                name
+              }
+            }
+          }
+        }
+        """
+        
+        variables = {"urlKey": url_key}
+        
+        graphql_payload = {
+            "query": query,
+            "variables": variables,
+            "operationName": "getProductCategories"
+        }
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+            'store': 'pwa'
+        }
+        
+        response = requests.post(NORLI_GRAPHQL_API, json=graphql_payload, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        if 'data' in data and 'products' in data['data']:
+            items = data['data']['products'].get('items', [])
+            if items and len(items) > 0:
+                product = items[0]
+                norli_categories = product.get('categories', [])
+                if norli_categories:
+                    category_names = [cat.get('name', '').lower() for cat in norli_categories if cat.get('name')]
+                    for cat in category_names:
+                        if cat not in categories:
+                            categories.append(cat)
+                    logging.info(f"Categories from Norli API: {category_names}")
+        
+    except requests.exceptions.RequestException as e:
+        logging.warning(f"Norli GraphQL API error: {e}")
+    except Exception as e:
+        logging.warning(f"Unexpected error fetching Norli categories: {e}")
+    
+    logging.info(f"Final categories for {book_url}: {categories}")
+    return categories
+
+
+def is_suitable_for_sexy_review(categories):
+    """Check if book categories are suitable for sexy/flirty reviews based on Norli categories"""
+    if not categories:
+        # If we can't determine categories, be conservative and skip
+        logging.info("No categories found - skipping for safety")
+        return False
+    
+    # Convert all to lowercase for comparison
+    categories_lower = [cat.lower() for cat in categories]
+    
+    # First check for unsuitable categories (immediate disqualify)
+    for category in categories_lower:
+        for unsuitable in UNSUITABLE_CATEGORIES:
+            if unsuitable in category:
+                logging.info(f"❌ Unsuitable category: '{category}' contains '{unsuitable}'")
+                return False
+    
+    # Check if any category matches our suitable list
+    for category in categories_lower:
+        for suitable in SUITABLE_CATEGORIES:
+            if suitable in category:
+                logging.info(f"✅ Suitable category found: '{category}' matches '{suitable}'")
+                return True
+    
+    # If no unsuitable found and no suitable found, be conservative
+    logging.info(f"⚠️  Uncertain categories: {categories} - skipping to be safe")
+    return False
 
 
 def scrape_book_details(book_url):
@@ -830,10 +1050,10 @@ def main():
         if ean_match:
             ean = ean_match.group(1)
             if ean not in reviewed_eans:
-                new_books.append(url)
+                new_books.append((url, ean))
         else:
-            # If we can't extract EAN, include it anyway
-            new_books.append(url)
+            # If we can't extract EAN, skip it
+            logging.debug(f"Skipping URL without EAN: {url}")
     
     if not new_books:
         logging.info("🛑 No new books to review! All books on the page have been reviewed.")
@@ -842,9 +1062,37 @@ def main():
     
     logging.info(f"Found {len(new_books)} new books to review (not yet reviewed by EAN)")
     
-    # Pick a random book
-    selected_url = random.choice(new_books)
-    logging.info(f"📚 Selected: {selected_url}")
+    # Filter books by category - check if they're suitable for sexy reviews
+    # STOP at first suitable book (no need to process all 117 books)
+    logging.info("\n🔍 Checking book categories to find first suitable book for sexy review...")
+    selected_url = None
+    selected_ean = None
+    selected_categories = None
+    
+    for url, ean in new_books:
+        categories = get_book_categories_from_norli(url)
+        if is_suitable_for_sexy_review(categories):
+            # Found a suitable book - use it immediately!
+            selected_url = url
+            selected_ean = ean
+            selected_categories = categories
+            logging.info(f"  ✅ Found suitable book: {url}")
+            logging.info(f"📖 Categories: {selected_categories}")
+            break  # Stop processing - we have our book!
+        else:
+            logging.info(f"  ❌ Skipping: {url}")
+        
+        # Small delay to be nice to API
+        time.sleep(0.3)
+    
+    if not selected_url:
+        logging.info("\n🛑 No suitable books found for sexy reviews today!")
+        logging.info("All available books are in categories that don't fit the flirty 'book daddy' style.")
+        logging.info("Skipping post for today - will try again tomorrow.")
+        exit(78)  # Exit code 78 means "no suitable books to review"
+    
+    logging.info(f"\n✅ Selected first suitable book!")
+    logging.info(f"📚 URL: {selected_url}")
     
     # Scrape book details
     book_data = scrape_book_details(selected_url)
