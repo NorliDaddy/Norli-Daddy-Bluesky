@@ -388,9 +388,9 @@ def scrape_book_details(url_key):
     logging.info(f"Fetching book details for {url_key}")
     
     try:
-        # First, get data from GraphQL including categories for proper URL construction
+        # Use comprehensive query that includes common_products with better image URLs
         query = """
-        query getProduct($urlKey: String!) {
+        query getProductExtraDetailForProductPage($urlKey: String!) {
           products(filter: {url_key: {eq: $urlKey}}) {
             items {
               id
@@ -413,6 +413,16 @@ def scrape_book_details(url_key):
                 name
                 url_path
               }
+              common_products {
+                name
+                format
+                image {
+                  url
+                }
+                thumbnail {
+                  url
+                }
+              }
             }
           }
         }
@@ -423,7 +433,7 @@ def scrape_book_details(url_key):
         payload = {
             "query": query,
             "variables": variables,
-            "operationName": "getProduct"
+            "operationName": "getProductExtraDetailForProductPage"
         }
         
         headers = {
@@ -481,27 +491,6 @@ def scrape_book_details(url_key):
             soup = BeautifulSoup(desc_html, 'html.parser')
             description = soup.get_text(separator=' ', strip=True)
         
-        # Get image URL from GraphQL and transform to public CDN URL
-        image_url = ''
-        media_gallery = product.get('media_gallery', [])
-        if media_gallery:
-            image_url = media_gallery[0].get('url', '')
-        elif product.get('small_image'):
-            image_url = product.get('small_image', {}).get('url', '')
-        
-        # Transform image URL to use www.norli.no CDN with optimizations
-        # From: https://checkout.norli.no/media/catalog/product/cache/{hash}/9/7/9788202869885_1_13.jpg
-        # To:   https://www.norli.no/media/catalog/product/9/7/9788202869885_1_13.jpg?auto=webp&format=pjpg&width=960&height=1200&fit=cover
-        if image_url:
-            # Replace domain
-            image_url = image_url.replace('checkout.norli.no', 'www.norli.no')
-            # Remove cache path: /cache/{hash}/
-            image_url = re.sub(r'/cache/[a-f0-9]+/', '/', image_url)
-            # Add optimization parameters
-            if '?' not in image_url:
-                image_url += '?auto=webp&format=pjpg&width=960&height=1200&fit=cover'
-            logging.info(f"Using optimized image URL: {image_url}")
-        
         # Build initial book data
         book_data = {
             'url': book_url,
@@ -512,38 +501,124 @@ def scrape_book_details(url_key):
             'language': 'Norwegian',
             'description': description,
             'reviews': '',
-            'image_url': image_url
+            'image_url': ''  # Will be set after scraping
         }
         
-        # Light scraping for author and year (not in GraphQL)
-        # Only fetch the page if we need author/year
-        try:
-            page_response = requests.get(book_url, headers=headers, timeout=10)
-            if page_response.status_code == 200:
-                soup = BeautifulSoup(page_response.text, 'html.parser')
-                
-                # Extract author
-                author_selectors = [
-                    '.productFullDetailNorli-authors-cdP a',
-                    'a[href*="/forfatter/"]',
-                    '.author',
-                    'span[itemprop="author"]'
-                ]
-                for selector in author_selectors:
-                    element = soup.select_one(selector)
-                    if element:
-                        book_data['author'] = element.get_text(strip=True)
-                        if book_data['author']:
+        # Use image URL from GraphQL main product (not common_products)
+        # The media_gallery and small_image URLs are correct for the specific book
+        image_url = ''
+        page_response = None  # Initialize for later use
+        
+        # Priority 1: media_gallery (usually better quality)
+        media_gallery = product.get('media_gallery', [])
+        if media_gallery and len(media_gallery) > 0:
+            image_url = media_gallery[0].get('url', '')
+            if image_url:
+                logging.info(f"Using media_gallery image: {image_url}")
+        
+        # Priority 2: small_image (fallback)
+        if not image_url:
+            small_image = product.get('small_image', {})
+            if small_image and small_image.get('url'):
+                image_url = small_image['url']
+                logging.info(f"Using small_image: {image_url}")
+        
+        # Transform checkout.norli.no URLs to www.norli.no format (required for external embedding)
+        # From: https://checkout.norli.no/media/catalog/product/cache/{hash}/9/7/9788202869885_1_13.jpg
+        # To: https://www.norli.no/media/catalog/product/9/7/9788202869885_1_13.jpg
+        if image_url:
+            image_url = image_url.replace('checkout.norli.no', 'www.norli.no')
+            # Remove cache path: /cache/{hash}/
+            if '/cache/' in image_url:
+                parts = image_url.split('/media/catalog/product/')
+                if len(parts) == 2:
+                    # Extract everything after cache/{hash}/
+                    after_product = parts[1]
+                    if after_product.startswith('cache/'):
+                        # Skip 'cache/{hash}/' parts (first 2 parts after split)
+                        remaining_parts = after_product.split('/')
+                        if len(remaining_parts) > 2:
+                            after_cache = '/'.join(remaining_parts[2:])
+                            image_url = parts[0] + '/media/catalog/product/' + after_cache
+            logging.info(f"Transformed image URL: {image_url}")
+        
+        # Priority 3: Try scraping the page
+        if not image_url:
+            try:
+                page_response = requests.get(book_url, headers=headers, timeout=10)
+                if page_response.status_code == 200:
+                    soup = BeautifulSoup(page_response.text, 'html.parser')
+                    
+                    # Look for book cover images with Norli-specific patterns
+                    image_selectors = [
+                        'img[alt="image-product"]',
+                        '.carouselGallery-image-gHz',
+                        'img[src*="/media/catalog/product/"]',
+                    ]
+                    
+                    for selector in image_selectors:
+                        img_elements = soup.select(selector)
+                        for img in img_elements:
+                            src = img.get('src', '')
+                            if src and '/media/catalog/product/' in src and ('width=728' in src or 'width=960' in src):
+                                if 'width=728' in src:
+                                    image_url = src.replace('width=728', 'width=960')
+                                else:
+                                    image_url = src
+                                # Transform to www.norli.no format
+                                image_url = image_url.replace('checkout.norli.no', 'www.norli.no')
+                                if '/cache/' in image_url:
+                                    parts = image_url.split('/media/catalog/product/')
+                                    if len(parts) == 2:
+                                        after_product = parts[1]
+                                        if after_product.startswith('cache/'):
+                                            remaining_parts = after_product.split('/')
+                                            if len(remaining_parts) > 2:
+                                                after_cache = '/'.join(remaining_parts[2:])
+                                                image_url = parts[0] + '/media/catalog/product/' + after_cache
+                                logging.info(f"Found image from page scraping: {image_url}")
+                                break
+                        if image_url:
                             break
-                
-                # Extract year from page text
-                if not book_data['year']:
-                    text = soup.get_text()
-                    year_match = re.search(r'\b(202[0-9]|201[0-9])\b', text)
-                    if year_match:
-                        book_data['year'] = year_match.group(1)
-        except Exception as e:
-            logging.warning(f"Could not fetch additional details: {e}")
+            except Exception as e:
+                logging.warning(f"Could not scrape image from page: {e}")
+        
+        # Set the image URL in book_data
+        book_data['image_url'] = image_url
+        
+        # Fetch page for author/year extraction if not already fetched
+        if not page_response:
+            try:
+                page_response = requests.get(book_url, headers=headers, timeout=10)
+            except Exception as e:
+                logging.warning(f"Could not fetch page for author/year extraction: {e}")
+        
+        # Continue with author/year scraping from page
+        if page_response and page_response.status_code == 200:
+            soup = BeautifulSoup(page_response.text, 'html.parser')
+            
+            # Extract author
+            author_selectors = [
+                '.productFullDetailNorli-authors-cdP a',
+                'a[href*="/forfatter/"]',
+                '.author',
+                'span[itemprop="author"]'
+            ]
+            for selector in author_selectors:
+                element = soup.select_one(selector)
+                if element:
+                    book_data['author'] = element.get_text(strip=True)
+                    if book_data['author']:
+                        break
+            
+            # Extract year from page text
+            if not book_data['year']:
+                text = soup.get_text()
+                year_match = re.search(r'\b(202[0-9]|201[0-9])\b', text)
+                if year_match:
+                    book_data['year'] = year_match.group(1)
+        else:
+            logging.warning(f"Could not fetch page for author/year extraction")
         
         logging.info(f"Extracted: {book_data['title']}" + (f" by {book_data['author']}" if book_data['author'] else ""))
         return book_data

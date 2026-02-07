@@ -1,7 +1,24 @@
 {
-  "reviewed_books": [],
+  "reviewed_books": [
+    {
+      "ean": "9788202869885",
+      "title": "Ned fra himmelen",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/ned-fra-himmelen-9788202869885",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mebd6ani3d2r",
+      "reviewed_at": "2026-02-07T11:34:06.538692+00:00"
+    },
+    {
+      "ean": "9788249531059",
+      "title": "Hvis jeg d\u00f8r",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/kritikerroste-boker/terningkast-5/hvis-jeg-dor-9788249531059",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mebd74ptho2r",
+      "reviewed_at": "2026-02-07T11:34:35.968505+00:00"
+    }
+  ],
   "stats": {
-    "total_reviews": 0,
-    "total_posted": 0
+    "total_reviews": 2,
+    "total_posted": 2
   }
 }
