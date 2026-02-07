@@ -481,13 +481,26 @@ def scrape_book_details(url_key):
             soup = BeautifulSoup(desc_html, 'html.parser')
             description = soup.get_text(separator=' ', strip=True)
         
-        # Get image URL
+        # Get image URL from GraphQL and transform to public CDN URL
         image_url = ''
         media_gallery = product.get('media_gallery', [])
         if media_gallery:
             image_url = media_gallery[0].get('url', '')
         elif product.get('small_image'):
             image_url = product.get('small_image', {}).get('url', '')
+        
+        # Transform image URL to use www.norli.no CDN with optimizations
+        # From: https://checkout.norli.no/media/catalog/product/cache/{hash}/9/7/9788202869885_1_13.jpg
+        # To:   https://www.norli.no/media/catalog/product/9/7/9788202869885_1_13.jpg?auto=webp&format=pjpg&width=960&height=1200&fit=cover
+        if image_url:
+            # Replace domain
+            image_url = image_url.replace('checkout.norli.no', 'www.norli.no')
+            # Remove cache path: /cache/{hash}/
+            image_url = re.sub(r'/cache/[a-f0-9]+/', '/', image_url)
+            # Add optimization parameters
+            if '?' not in image_url:
+                image_url += '?auto=webp&format=pjpg&width=960&height=1200&fit=cover'
+            logging.info(f"Using optimized image URL: {image_url}")
         
         # Build initial book data
         book_data = {
