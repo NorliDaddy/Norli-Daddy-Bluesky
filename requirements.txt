@@ -1,7 +1,0 @@
-requests
-python-dotenv
-atproto
-beautifulsoup4
-lxml
-selenium
-webdriver-manager

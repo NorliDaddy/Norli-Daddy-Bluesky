@@ -1,20 +1,18 @@
-[tool.poetry]
+[project]
 name = "norli-book-daddy-bot"
 version = "1.0.0"
 description = "A Bluesky bot that generates flirty book reviews from Norli.no using GPT-4o."
-authors = ["Turbolego <turbolego@gmail.com>"]
-license = "MIT"
+authors = [{name = "Turbolego", email = "turbolego@gmail.com"}]
+license = {text = "MIT"}
 readme = "README.md"
 keywords = ["bsky", "bluesky", "atproto", "bot", "python", "books", "ai", "gpt4o"]
-
-[tool.poetry.dependencies]
-python = ">=3.11"
-requests = "*"
-python-dotenv = "*"
-atproto = "*"
-beautifulsoup4 = "*"
-lxml = "*"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+    "atproto>=0.0.65",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=5.0.0",
+    "selenium>=4.15.0",
+    "webdriver-manager>=4.0.0",
+]
