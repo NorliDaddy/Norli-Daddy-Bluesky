@@ -39,10 +39,18 @@
       "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter/nyheter-og-bestselgere-skjonnlitteratur/oroppa-9788202876043",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3meirrb4np42p",
       "reviewed_at": "2026-02-10T10:43:54.925208+00:00"
+    },
+    {
+      "ean": "9788202895372",
+      "title": "M. Europas siste dager",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/m-europas-siste-dager-9788202895372",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3melbxuw6d52j",
+      "reviewed_at": "2026-02-11T10:39:15.905700+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 5,
-    "total_posted": 5
+    "total_reviews": 6,
+    "total_posted": 6
   }
 }
