@@ -63,10 +63,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/vinden-gjennom-oss-9788210060779",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3meqcfa7l4w2y",
       "reviewed_at": "2026-02-13T10:30:03.322219+00:00"
+    },
+    {
+      "ean": "9788202820237",
+      "title": "Tilfellet Kukotskij",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/tilfellet-kukotskij-9788202820237",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mess3pc3pf2i",
+      "reviewed_at": "2026-02-14T10:16:22.272404+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 8,
-    "total_posted": 8
+    "total_reviews": 9,
+    "total_posted": 9
   }
 }
