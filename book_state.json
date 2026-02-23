@@ -111,10 +111,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/alt-mitt-er-ditt-9788249531097",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mfefcyeels2v",
       "reviewed_at": "2026-02-21T10:15:43.841536+00:00"
+    },
+    {
+      "ean": "9788249531141",
+      "title": "Vera",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/vera-10-9788249531141",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mfjhlkobts2g",
+      "reviewed_at": "2026-02-23T10:39:37.467835+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 14,
-    "total_posted": 14
+    "total_reviews": 15,
+    "total_posted": 15
   }
 }
