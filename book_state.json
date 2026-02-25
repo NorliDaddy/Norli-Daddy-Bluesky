@@ -119,10 +119,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/vera-10-9788249531141",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mfjhlkobts2g",
       "reviewed_at": "2026-02-23T10:39:37.467835+00:00"
+    },
+    {
+      "ean": "9788253045726",
+      "title": "DJ Bambi",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/dj-bambi-9788253045726",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mfoiluxmy22v",
+      "reviewed_at": "2026-02-25T10:41:00.738529+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 15,
-    "total_posted": 15
+    "total_reviews": 16,
+    "total_posted": 16
   }
 }
