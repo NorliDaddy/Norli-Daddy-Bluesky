@@ -167,10 +167,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/i-ly-av-regnet-9788234727511",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mg32ljfosz24",
       "reviewed_at": "2026-03-02T10:34:53.055530+00:00"
+    },
+    {
+      "ean": "9788202871352",
+      "title": "Bare la dem komme",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter/nyheter-og-bestselgere-skjonnlitteratur/bare-la-dem-komme-9788202871352",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mgclnrmab423",
+      "reviewed_at": "2026-03-05T10:29:00.324382+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 21,
-    "total_posted": 21
+    "total_reviews": 22,
+    "total_posted": 22
   }
 }
