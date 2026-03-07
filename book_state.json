@@ -183,10 +183,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/hastetilfelle-9788234725685",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mgf3upcnzp2e",
       "reviewed_at": "2026-03-06T10:24:32.226880+00:00"
+    },
+    {
+      "ean": "9788234724749",
+      "title": "Ved krigens slutt",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/ved-krigens-slutt-9788234724749",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mghlqqmrql26",
+      "reviewed_at": "2026-03-07T10:13:58.808771+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 23,
-    "total_posted": 23
+    "total_reviews": 24,
+    "total_posted": 24
   }
 }
