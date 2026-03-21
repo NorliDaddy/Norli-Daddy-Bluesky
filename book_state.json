@@ -215,10 +215,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/de-fire-steinene-9788248942849",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mhdcfaebuc2y",
       "reviewed_at": "2026-03-18T10:41:01.983458+00:00"
+    },
+    {
+      "ean": "9788202901639",
+      "title": "B\u00e6rebjelker",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/lyrikk-og-drama/lyrikk/baerebjelker-9788202901639",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mhksgmvh3f26",
+      "reviewed_at": "2026-03-21T10:16:46.253579+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 27,
-    "total_posted": 27
+    "total_reviews": 28,
+    "total_posted": 28
   }
 }
