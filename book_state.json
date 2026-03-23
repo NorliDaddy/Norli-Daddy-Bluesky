@@ -231,10 +231,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/det-vi-aldri-sier-9788232807802",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mhncwts4oe26",
       "reviewed_at": "2026-03-22T10:17:29.602657+00:00"
+    },
+    {
+      "ean": "9788203458002",
+      "title": "Gustav",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/kritikerroste-boker/morgenbladet-arets-beste-boker/morgenbladet-arets-beste-romaner-og-krim/gustav-9788203458002",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mhpute7j7f2l",
+      "reviewed_at": "2026-03-23T10:42:59.734045+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 29,
-    "total_posted": 29
+    "total_reviews": 30,
+    "total_posted": 30
   }
 }
