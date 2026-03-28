@@ -271,10 +271,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/johns-sonn-john-9788205619326",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mhzwffcnmn2f",
       "reviewed_at": "2026-03-27T10:37:35.988460+00:00"
+    },
+    {
+      "ean": "9788205614840",
+      "title": "F\u00f8rstelinja",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/forstelinja-9788205614840",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mi4fycw57h2y",
+      "reviewed_at": "2026-03-28T10:21:56.452764+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 34,
-    "total_posted": 34
+    "total_reviews": 35,
+    "total_posted": 35
   }
 }
