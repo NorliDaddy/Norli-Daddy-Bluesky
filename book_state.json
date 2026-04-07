@@ -295,10 +295,18 @@
       "norli_url": "https://www.norli.no/kampanje/boker-pa-tilbud/skjonnlitteratur/romaner-og-fortellinger/stolthet-og-fordom-5-9788203462016",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3midymi5gbb23",
       "reviewed_at": "2026-03-31T10:43:58.784272+00:00"
+    },
+    {
+      "ean": "9788284422039",
+      "title": "Den lille boka om kollegaer av varierende kvalitet",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/topplister/topp-10-tegneserier/lunch-9788284422039",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mivlyiy5t72j",
+      "reviewed_at": "2026-04-07T10:45:58.716441+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 37,
-    "total_posted": 37
+    "total_reviews": 38,
+    "total_posted": 38
   }
 }
