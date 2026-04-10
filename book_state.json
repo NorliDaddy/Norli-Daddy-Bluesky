@@ -303,10 +303,18 @@
       "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/topplister/topp-10-tegneserier/lunch-9788284422039",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mivlyiy5t72j",
       "reviewed_at": "2026-04-07T10:45:58.716441+00:00"
+    },
+    {
+      "ean": "9788248942337",
+      "title": "Russiske spesialiteter",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/lesetips-og-aktuelle-temaer/russland-og-ukraina/russiske-spesialiteter-9788248942337",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mj557y5vnd2j",
+      "reviewed_at": "2026-04-10T10:43:01.329427+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 38,
-    "total_posted": 38
+    "total_reviews": 39,
+    "total_posted": 39
   }
 }
