@@ -319,10 +319,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/insula-9788234724725",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mj7mmim3kh2q",
       "reviewed_at": "2026-04-11T10:23:46.888840+00:00"
+    },
+    {
+      "ean": "9788234013614",
+      "title": "Dagbok fr\u00e5 eit tomrom",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/dagbok-fra-eit-tomrom-9788234013614",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mjc5g7zbn42c",
+      "reviewed_at": "2026-04-12T10:29:49.685692+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 40,
-    "total_posted": 40
+    "total_reviews": 41,
+    "total_posted": 41
   }
 }
