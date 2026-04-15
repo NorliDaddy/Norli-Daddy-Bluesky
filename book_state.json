@@ -343,10 +343,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/hey-hafni-9788249530212",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mjh7uefula26",
       "reviewed_at": "2026-04-14T10:56:50.166768+00:00"
+    },
+    {
+      "ean": "9788203460319",
+      "title": "Morsdager",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/kritikerroste-boker/terningkast-5/morsdager-9788203460319",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mjjq5zqkrl2t",
+      "reviewed_at": "2026-04-15T10:53:53.743229+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 43,
-    "total_posted": 43
+    "total_reviews": 44,
+    "total_posted": 44
   }
 }
