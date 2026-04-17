@@ -359,10 +359,18 @@
       "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter/nyheter-og-bestselgere-skjonnlitteratur/de-etterlatte-9788249531080",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mjmanmqy2a2t",
       "reviewed_at": "2026-04-16T10:54:17.465003+00:00"
+    },
+    {
+      "ean": "9788232807956",
+      "title": "Djinner",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/djinner-9788232807956",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mjoqnavavo2q",
+      "reviewed_at": "2026-04-17T10:45:43.556238+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 45,
-    "total_posted": 45
+    "total_reviews": 46,
+    "total_posted": 46
   }
 }
