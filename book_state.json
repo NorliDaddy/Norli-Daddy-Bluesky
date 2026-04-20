@@ -383,10 +383,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/midnattstoget-9788284322148",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mjtqq5jpbo2r",
       "reviewed_at": "2026-04-19T10:30:39.603019+00:00"
+    },
+    {
+      "ean": "9788205619814",
+      "title": "Habitat",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter/nyheter-og-bestselgere-skjonnlitteratur/habitat-4-9788205619814",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mjwdh33bbo2p",
+      "reviewed_at": "2026-04-20T11:10:55.330281+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 48,
-    "total_posted": 48
+    "total_reviews": 49,
+    "total_posted": 49
   }
 }
