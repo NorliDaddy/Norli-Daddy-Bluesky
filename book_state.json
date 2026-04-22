@@ -399,10 +399,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/det-snur-na-9788282885959",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mjyt6t4sfi2a",
       "reviewed_at": "2026-04-21T10:57:58.076927+00:00"
+    },
+    {
+      "ean": "9788248939320",
+      "title": "Eremittsommer",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter/nyheter-og-bestselgere-skjonnlitteratur/eremittsommer-9788248939320",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mk3dmdymec25",
+      "reviewed_at": "2026-04-22T10:57:11.100803+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 50,
-    "total_posted": 50
+    "total_reviews": 51,
+    "total_posted": 51
   }
 }
