@@ -415,10 +415,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/topp-10-romaner/duften-av-jasmin-9788248943280",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mk5uamx7wv2q",
       "reviewed_at": "2026-04-23T11:00:10.883614+00:00"
+    },
+    {
+      "ean": "9788202888916",
+      "title": "Hvis jeg var Agnes",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter/nyheter-og-bestselgere-skjonnlitteratur/hvis-jeg-var-agnes-9788202888916",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mkael6tx362i",
+      "reviewed_at": "2026-04-24T10:57:44.582250+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 52,
-    "total_posted": 52
+    "total_reviews": 53,
+    "total_posted": 53
   }
 }
