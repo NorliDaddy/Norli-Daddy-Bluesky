@@ -423,10 +423,18 @@
       "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter/nyheter-og-bestselgere-skjonnlitteratur/hvis-jeg-var-agnes-9788202888916",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mkael6tx362i",
       "reviewed_at": "2026-04-24T10:57:44.582250+00:00"
+    },
+    {
+      "ean": "9788234724701",
+      "title": "Dog mode",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/dog-mode-9788234724701",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mkctrl5hg72a",
+      "reviewed_at": "2026-04-25T10:35:04.658273+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 53,
-    "total_posted": 53
+    "total_reviews": 54,
+    "total_posted": 54
   }
 }
