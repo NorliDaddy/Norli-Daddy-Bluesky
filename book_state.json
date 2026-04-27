@@ -439,10 +439,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/kvinner-som-gar-9788248940371",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mkfedjy2ld2r",
       "reviewed_at": "2026-04-26T10:36:46.319190+00:00"
+    },
+    {
+      "ean": "9788203460241",
+      "title": "Folk som hater lokalhistorie",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/folk-som-hater-lokalhistorie-9788203460241",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mkhxrwsi4x25",
+      "reviewed_at": "2026-04-27T11:30:10.240607+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 55,
-    "total_posted": 55
+    "total_reviews": 56,
+    "total_posted": 56
   }
 }
