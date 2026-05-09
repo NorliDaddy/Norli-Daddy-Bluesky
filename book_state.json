@@ -455,10 +455,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/ljodane-9788249531110",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mkkic6zpct2g",
       "reviewed_at": "2026-04-28T11:30:55.118795+00:00"
+    },
+    {
+      "ean": "9788249530533",
+      "title": "N\u00e5r ild ser",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter/nyheter-og-bestselgere-skjonnlitteratur/nar-ild-ser-9788249530533",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mlg2vbenyc2j",
+      "reviewed_at": "2026-05-09T10:45:35.285424+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 57,
-    "total_posted": 57
+    "total_reviews": 58,
+    "total_posted": 58
   }
 }
