@@ -463,10 +463,18 @@
       "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter/nyheter-og-bestselgere-skjonnlitteratur/nar-ild-ser-9788249530533",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mlg2vbenyc2j",
       "reviewed_at": "2026-05-09T10:45:35.285424+00:00"
+    },
+    {
+      "ean": "9788253045832",
+      "title": "Ingen vender tilbake",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/ingen-vender-tilbake-9788253045832",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mlilsrchi326",
+      "reviewed_at": "2026-05-10T10:53:44.530535+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 58,
-    "total_posted": 58
+    "total_reviews": 59,
+    "total_posted": 59
   }
 }
