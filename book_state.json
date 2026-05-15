@@ -503,10 +503,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/elsket-og-savnet-6-9788202874483",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mlsqgr6bwm2d",
       "reviewed_at": "2026-05-14T11:43:07.786574+00:00"
+    },
+    {
+      "ean": "9788203459283",
+      "title": "Mater 2-10",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/mater-2-10-2-9788203459283",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mlvb3vwal22p",
+      "reviewed_at": "2026-05-15T11:46:36.675096+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 63,
-    "total_posted": 63
+    "total_reviews": 64,
+    "total_posted": 64
   }
 }
