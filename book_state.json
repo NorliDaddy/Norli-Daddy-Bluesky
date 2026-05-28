@@ -519,10 +519,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/under-vann-1-9788205613881",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mlxoo6ifhi2u",
       "reviewed_at": "2026-05-16T10:54:47.791898+00:00"
+    },
+    {
+      "ean": "9788202918767",
+      "title": "Delirium",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter/nyheter-og-bestselgere-skjonnlitteratur/delirium-9788202918767",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mmw3bh5knc2r",
+      "reviewed_at": "2026-05-28T13:00:11.010661+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 65,
-    "total_posted": 65
+    "total_reviews": 66,
+    "total_posted": 66
   }
 }
