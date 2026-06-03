@@ -535,10 +535,18 @@
       "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter/nyheter-og-bestselgere-skjonnlitteratur/den-svake-viljen-9788210060915",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mnagfsypt22y",
       "reviewed_at": "2026-06-01T15:46:06.848401+00:00"
+    },
+    {
+      "ean": "9788248942092",
+      "title": "Stort sett menneskelig",
+      "author": "",
+      "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter/nyheter-og-bestselgere-skjonnlitteratur/stort-sett-menneskelig-9788248942092",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mnfcjjrwrb2n",
+      "reviewed_at": "2026-06-03T14:19:54.934304+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 67,
-    "total_posted": 67
+    "total_reviews": 68,
+    "total_posted": 68
   }
 }
