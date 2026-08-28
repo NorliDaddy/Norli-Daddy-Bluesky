@@ -242,11 +242,11 @@ def get_working_proxy(force_refresh=False):
 
         # Filter for Norway or European proxies
         european_proxies = [p for p in all_proxies if p.get('geolocation', {}).get('country', {}).get('iso_code', '') in ['NO', 'SE', 'DK', 'FI', 'DE', 'NL']]
-        if not european_proxies:
-            european_proxies = all_proxies[:5]
+        # Try up to 10 EU proxies, or 10 from the full list if none match
+        candidates = european_proxies[:10] if european_proxies else all_proxies[:10]
 
         # Try to find a working proxy
-        for proxy in european_proxies[:10]:  # Try more proxies than before
+        for proxy in candidates:  # Try more proxies than before
             protocol = proxy.get('protocol', 'http')
             host = proxy.get('host')
             port = proxy.get('port')
