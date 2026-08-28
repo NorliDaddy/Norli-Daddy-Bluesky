@@ -9,25 +9,25 @@ on:
 jobs:
   post-book-review:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
+
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
           version: "latest"
-      
+
       - name: Install dependencies
         run: |
           uv pip install --system -e .
-      
+
       - name: Run Norli Book Daddy Bot
         env:
           KEY_GITHUB_TOKEN: ${{ secrets.KEY_GITHUB_TOKEN }}
@@ -35,7 +35,8 @@ jobs:
           BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD }}
         run: |
           python src/main.py
-      
+        continue-on-error: true
+
       - name: Commit and push state file
         run: |
           git config --global user.name "Book Daddy Bot"
