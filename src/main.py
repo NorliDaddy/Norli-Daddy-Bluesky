@@ -38,6 +38,10 @@ SCRAPER_API_ENDPOINT = "https://api.scrapingbee.com/v1/"
 # URLs
 NORLI_GRAPHQL_API = "https://www.norli.no/graphql"
 
+# Global proxy cache for reuse across requests
+_proxy_cache = None
+_proxy_url = None
+
 # Category filtering - Norli URL path segments that indicate suitable books
 SUITABLE_CATEGORIES = [
     'skjonnlitteratur',  # Fiction
@@ -223,27 +227,27 @@ def scrape_book_list():
         return []
 
 
-def scrape_book_list_with_free_proxy(payload, headers):
-    """Fallback: Get book list via free proxy from monosans/proxy-list GitHub repo"""
-    logging.info("Using free proxy from monosans/proxy-list to bypass geo-blocking")
+def get_working_proxy():
+    """Get a working European proxy for bypassing geo-blocking"""
+    global _proxy_cache, _proxy_url
+
+    if _proxy_cache:
+        return _proxy_cache
 
     try:
-        # Get proxy list from GitHub (no API key required, updated hourly)
         proxies_response = requests.get(
             "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies.json",
             timeout=10
         )
-        proxies_response.raise_for_status()
         all_proxies = proxies_response.json()
 
         # Filter for Norway or European proxies
         european_proxies = [p for p in all_proxies if p.get('geolocation', {}).get('country', {}).get('iso_code', '') in ['NO', 'SE', 'DK', 'FI', 'DE', 'NL']]
         if not european_proxies:
-            # Fallback to any proxy if no European ones
-            european_proxies = all_proxies[:10]
+            european_proxies = all_proxies[:5]
 
-        # Try each proxy until one works
-        for proxy in european_proxies[:10]:
+        # Try to find a working proxy
+        for proxy in european_proxies[:5]:
             protocol = proxy.get('protocol', 'http')
             host = proxy.get('host')
             port = proxy.get('port')
@@ -252,37 +256,32 @@ def scrape_book_list_with_free_proxy(payload, headers):
                 continue
 
             proxy_url = f"{protocol}://{host}:{port}"
-            logging.info(f"Trying proxy: {proxy_url} (country: {proxy.get('geolocation', {}).get('country', {}).get('iso_code', 'unknown')})")
-
             try:
-                response = requests.post(
-                    NORLI_GRAPHQL_API,
-                    json=payload,
-                    headers=headers,
-                    proxies={'http': proxy_url, 'https': proxy_url},
-                    timeout=30
-                )
-
+                response = requests.get('https://httpbin.org/ip', proxies={'http': proxy_url, 'https': proxy_url}, timeout=5)
                 if response.status_code == 200:
-                    data = response.json()
-                    if 'data' in data and 'categoryList' in data['data']:
-                        categories = data['data']['categoryList']
-                        if categories and len(categories) > 0:
-                            products = categories[0].get('products', {}).get('items', [])
-                            url_keys = [p.get('url_key') for p in products if p.get('url_key')]
-                            logging.info(f"Found {len(url_keys)} books via free proxy")
-                            return url_keys
-
-                logging.warning(f"Proxy {proxy_url} failed with status {response.status_code}")
-            except Exception as e:
-                logging.debug(f"Proxy {proxy_url} failed: {e}")
-
-        logging.error("All free proxies failed")
-        return []
+                    _proxy_cache = proxy_url
+                    _proxy_url = proxy_url
+                    logging.info(f"✅ Found working proxy: {proxy_url}")
+                    return proxy_url
+            except:
+                continue
 
     except Exception as e:
-        logging.error(f"Error using free proxy fallback: {e}")
+        logging.debug(f"Failed to get proxy: {e}")
+
+    return None
+
+
+def scrape_book_list_with_free_proxy(payload, headers):
+    """Fallback: Get book list via free proxy from monosans/proxy-list GitHub repo"""
+    logging.info("Using free proxy from monosans/proxy-list to bypass geo-blocking")
+
+    working_proxy = get_working_proxy()
+    if not working_proxy:
+        logging.error("No working proxy found")
         return []
+
+    proxies = {'http': working_proxy, 'https': working_proxy}
 
 
 def check_target_group(url_key):
@@ -304,31 +303,33 @@ def check_target_group(url_key):
           }
         }
         """
-        
+
         variables = {"urlKey": url_key}
-        
+
         payload = {
             "query": query,
             "variables": variables,
             "operationName": "getTargetGroup"
         }
-        
+
         headers = {
             'Content-Type': 'application/json',
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
             'store': 'pwa'
         }
-        
-        response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=10)
+
+        proxies = {'http': _proxy_url, 'https': _proxy_url} if _proxy_url else None
+
+        response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=10, proxies=proxies)
         response.raise_for_status()
-        
+
         data = response.json()
-        
+
         if 'data' in data and 'products' in data['data']:
             items = data['data']['products'].get('items', [])
             if items:
                 product = items[0]
-                
+
                 # Check norli_junior.target_group first (it's an array)
                 norli_junior = product.get('norli_junior', {})
                 if norli_junior and 'target_group' in norli_junior:
@@ -339,7 +340,7 @@ def check_target_group(url_key):
                     else:
                         logging.info(f"❌ Target group: {target_groups} (Not adult)")
                         return False
-                
+
                 # Fallback to convert_product_page_attributes
                 attributes = product.get('convert_product_page_attributes', [])
                 for attr in attributes:
@@ -351,13 +352,13 @@ def check_target_group(url_key):
                         else:
                             logging.info(f"❌ Target group: {target_value} (Not adult)")
                             return False
-                
+
                 # If no target_group found, be conservative and reject
                 logging.info(f"⚠️  No target_group found - skipping for safety")
                 return False
-        
+
         return False
-        
+
     except Exception as e:
         logging.warning(f"Error checking target_group for {url_key}: {e}")
         return False

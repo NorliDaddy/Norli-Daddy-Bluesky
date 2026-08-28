@@ -33,9 +33,6 @@ jobs:
           KEY_GITHUB_TOKEN: ${{ secrets.KEY_GITHUB_TOKEN }}
           BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
           BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD }}
-          # Optional: Proxy for geo-blocking (set in repository secrets)
-          # Example: https://api.scrapingbee.com/v1?key=YOUR_KEY&country=no&render_js=false
-          SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
         run: |
           python src/main.py
       
