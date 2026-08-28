@@ -9,6 +9,8 @@ import logging
 import os
 import random
 import re
+import subprocess
+import shutil
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,11 +23,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# API Configuration
-API_KEY = os.getenv("KEY_GITHUB_TOKEN")  # Azure OpenAI via GitHub Models
-API_ENDPOINT = "https://models.inference.ai.azure.com/chat/completions"
-# Copilot Free/GitHub Models accounts use Auto model selection.
-MODEL_NAME = "auto"
+# AI Configuration - GitHub Copilot CLI
+# Uses copilot CLI with Claude Haiku 4.5 (fast, free tier)
+# Install: npm install -g @github/copilot
+# Auth: GH_TOKEN or GITHUB_TOKEN env var
+COPILOT_MODEL = "claude-3-5-haiku"
 
 # Bluesky Configuration
 BSKY_HANDLE = os.getenv("BSY_HANDLE")
@@ -614,13 +616,14 @@ def scrape_book_details(url_key):
 
 
 def generate_book_review(book_data):
-    """Generate a flirty 'book daddy' review using GPT-4o"""
+    """Generate a flirty 'book daddy' review using GitHub Copilot CLI"""
     logging.info(f"Generating review for {book_data['title']}")
-    
-    if not API_KEY:
-        logging.error("API key (KEY_GITHUB_TOKEN) not defined")
+
+    # Check if copilot CLI is available
+    if shutil.which("copilot") is None:
+        logging.error("GitHub Copilot CLI not found. Install with: npm install -g @github/copilot")
         return None
-    
+
     # Build the prompt
     prompt = f"""Write a flirty, sexy, and funny book review in Norwegian as a "book daddy". Maximum 700 characters. Use a playful and seductive tone throughout.
 
@@ -640,77 +643,54 @@ Description: {book_data['description']}
 Customer reviews: {book_data['reviews']}
 
 Write 2-3 engaging paragraphs that flow naturally. Focus on why this book is irresistible based on the description and themes."""
-    
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    body = {
-        "model": MODEL_NAME,
-        "messages": [
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        "max_tokens": 220,  # Roughly 700-750 chars
-        "temperature": 0.9
-    }
-    
+
     try:
-        resp = requests.post(API_ENDPOINT, json=body, headers=headers, timeout=60)
-        resp.raise_for_status()
-        
-        data = resp.json()
-        
-        # Debug logging
-        logging.debug(f"API Response: {json.dumps(data, indent=2)}")
-        
-        # Check if response has expected structure
-        if "choices" not in data or len(data["choices"]) == 0:
-            logging.error(f"Unexpected API response structure: {data}")
+        cmd = [
+            "copilot", "-p", prompt,
+            "-s",  # quiet mode
+            "--model", COPILOT_MODEL,
+            "--no-ask-user"
+        ]
+
+        logging.info(f"🔍 Calling Copilot CLI with model {COPILOT_MODEL}...")
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+
+        if proc.returncode != 0:
+            logging.error(f"Copilot CLI failed: {proc.stderr}")
             return None
-        
-        message = data["choices"][0].get("message", {})
-        if "content" not in message:
-            logging.error(f"No content in message: {message}")
+
+        review = proc.stdout.strip()
+        if not review:
+            logging.error("Copilot CLI returned empty response")
             return None
-        
-        review = message["content"].strip()
-        
+
         logging.info(f"✅ Generated review ({len(review)} chars)")
-        
+
         # Check if review is too long for 3 posts (max ~820 chars for content)
         max_review_length = 820
         if len(review) > max_review_length:
-            logging.warning(f"Review is {len(review)} chars, requesting shorter version from GPT-4o")
+            logging.warning(f"Review is {len(review)} chars, requesting shorter version")
             return shorten_book_review(review, book_data, max_review_length)
-        
+
         return review
-        
-    except requests.exceptions.RequestException as e:
-        logging.error(f"HTTP error calling OpenAI API: {e}")
-        if hasattr(e.response, 'text'):
-            logging.error(f"Response: {e.response.text}")
-        return None
-    except KeyError as e:
-        logging.error(f"KeyError parsing API response: {e}")
-        logging.error(f"Full response: {data if 'data' in locals() else 'No response data'}")
+
+    except subprocess.TimeoutExpired:
+        logging.error("Copilot CLI timed out")
         return None
     except Exception as e:
-        logging.error(f"Error calling OpenAI API: {e}")
+        logging.error(f"Error calling Copilot CLI: {e}")
         return None
 
 
 def shorten_book_review(current_review, book_data, target_length):
-    """Ask GPT-4o to shorten an existing review"""
+    """Ask Copilot CLI to shorten an existing review"""
     logging.info(f"Shortening review from {len(current_review)} to ~{target_length} chars")
-    
-    if not API_KEY:
-        logging.error("API key (KEY_GITHUB_TOKEN) not defined")
+
+    # Check if copilot CLI is available
+    if shutil.which("copilot") is None:
+        logging.error("GitHub Copilot CLI not found - returning original review")
         return current_review
-    
+
     shorten_prompt = f"""The following book review is too long. Please rewrite it to be maximum {target_length} characters while keeping it flirty, sexy, funny, and engaging. Maintain the playful seductive tone.
 
 Current review ({len(current_review)} chars):
@@ -721,42 +701,35 @@ RULES:
 - Make it shorter but still irresistible
 - DO NOT add title, author, or year
 - Aim for {target_length} characters or less"""
-    
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    body = {
-        "model": MODEL_NAME,
-        "messages": [
-            {
-                "role": "user",
-                "content": shorten_prompt
-            }
-        ],
-        "max_tokens": 180,
-        "temperature": 0.8
-    }
-    
+
     try:
-        resp = requests.post(API_ENDPOINT, json=body, headers=headers, timeout=60)
-        resp.raise_for_status()
-        
-        data = resp.json()
-        
-        message = data["choices"][0].get("message", {})
-        if "content" not in message:
-            logging.error(f"No content in shortening response")
+        cmd = [
+            "copilot", "-p", shorten_prompt,
+            "-s",
+            "--model", COPILOT_MODEL,
+            "--no-ask-user"
+        ]
+
+        logging.info(f"🔍 Calling Copilot CLI to shorten review...")
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+
+        if proc.returncode != 0:
+            logging.warning(f"Copilot CLI failed: {proc.stderr} - using original review")
             return current_review
-        
-        shortened = message["content"].strip()
-        
+
+        shortened = proc.stdout.strip()
+        if not shortened:
+            logging.warning("Copilot CLI returned empty response - using original review")
+            return current_review
+
         logging.info(f"✅ Shortened review to {len(shortened)} chars")
         return shortened
-        
+
+    except subprocess.TimeoutExpired:
+        logging.warning("Copilot CLI timed out - using original review")
+        return current_review
     except Exception as e:
-        logging.error(f"Error shortening review: {e}")
+        logging.error(f"Error shortening review: {e} - using original review")
         return current_review
 
 

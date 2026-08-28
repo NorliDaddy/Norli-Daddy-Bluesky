@@ -9,6 +9,7 @@ on:
 jobs:
   post-book-review:
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     steps:
       - name: Checkout repository
@@ -24,18 +25,22 @@ jobs:
         with:
           version: "latest"
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           uv pip install --system -e .
 
+      - name: Install GitHub Copilot CLI
+        run: |
+          npm install -g @github/copilot
+          copilot --version
+
       - name: Run Norli Book Daddy Bot
         env:
-          KEY_GITHUB_TOKEN: ${{ secrets.KEY_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
           BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD }}
         run: |
           python src/main.py
-        continue-on-error: true
 
       - name: Commit and push state file
         run: |
