@@ -231,8 +231,7 @@ def get_working_proxy(force_refresh=False):
     if _proxy_cache and not force_refresh:
         return _proxy_cache
 
-    # Reset consecutive failure counter on fresh lookup
-    _proxy_consecutive_failures = 0
+    # Don't reset counter here — only reset on actual success below
 
     try:
         proxies_response = requests.get(
@@ -364,8 +363,10 @@ def check_target_group(url_key):
         except (requests.exceptions.ProxyError, requests.exceptions.ConnectTimeout) as e:
             if _proxy_url:
                 _invalidate_proxy()
-                new_proxies = {'http': _proxy_url, 'https': _proxy_url} if _proxy_url else None
-                logging.info(f"🔄 Retrying {url_key} after proxy failure...")
+                # Fetch a fresh proxy before retrying
+                fresh_proxy = get_working_proxy(force_refresh=True)
+                new_proxies = {'http': fresh_proxy, 'https': fresh_proxy} if fresh_proxy else None
+                logging.info(f"🔄 Retrying {url_key} after proxy failure (new proxy: {fresh_proxy or 'none'})...")
                 try:
                     response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=10, proxies=new_proxies)
                 except Exception as e2:
@@ -458,8 +459,10 @@ def get_book_categories_from_norli(url_key):
         except (requests.exceptions.ProxyError, requests.exceptions.ConnectTimeout) as e:
             if _proxy_url:
                 _invalidate_proxy()
-                new_proxies = {'http': _proxy_url, 'https': _proxy_url} if _proxy_url else None
-                logging.info(f"🔄 Retrying categories for {url_key} after proxy failure...")
+                # Fetch a fresh proxy before retrying
+                fresh_proxy = get_working_proxy(force_refresh=True)
+                new_proxies = {'http': fresh_proxy, 'https': fresh_proxy} if fresh_proxy else None
+                logging.info(f"🔄 Retrying categories for {url_key} after proxy failure (new proxy: {fresh_proxy or 'none'})...")
                 try:
                     response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=10, proxies=new_proxies)
                 except Exception as e2:
