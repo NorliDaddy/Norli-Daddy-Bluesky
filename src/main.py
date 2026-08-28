@@ -332,9 +332,23 @@ def scrape_book_list_with_free_proxy(payload, headers):
                 categories = data['data']['categoryList']
                 if categories and len(categories) > 0:
                     products = categories[0].get('products', {}).get('items', [])
-                    url_keys = [p.get('url_key') for p in products if p.get('url_key')]
-                    logging.info(f"Found {len(url_keys)} books via free proxy")
-                    return url_keys
+                    books = []
+                    for p in products:
+                        url_key = p.get('url_key')
+                        if not url_key:
+                            continue
+                        nj = p.get('norli_junior', {}) or {}
+                        tg = nj.get('target_group', []) or []
+                        cats = [c.get('name', '') for c in p.get('categories', []) if c.get('name')]
+                        books.append({
+                            'url_key': url_key,
+                            'name': p.get('name', ''),
+                            'sku': p.get('sku', ''),
+                            'target_group': tg,
+                            'categories': cats,
+                        })
+                    logging.info(f"Found {len(books)} books via free proxy")
+                    return books
 
         logging.warning(f"Proxy request failed with status {response.status_code}")
         return []
