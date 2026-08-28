@@ -601,7 +601,11 @@ def scrape_book_details(url_key):
             logging.info(f"Transformed image URL: {image_url}")
         
         book_data['image_url'] = image_url
-        logging.info(f"Extracted: {book_data['title']}" + (f" by {book_data['author']}" if book_data['author'] else ""))
+        
+        # Extract full categories from detail query (rich, not truncated like batch)
+        cat_names = [c.get('name', '') for c in categories if c.get('name')]
+        book_data['categories'] = cat_names
+        logging.info(f"Extracted: {book_data['title']}" + (f" by {book_data['author']}" if book_data['author'] else "") + (f" | categories: {cat_names}" if cat_names else ""))
         return book_data
         
     except Exception as e:
@@ -1159,50 +1163,55 @@ def main():
     
     logging.info(f"Found {len(new_books)} new books to review (not yet reviewed by EAN)")
     
-    # Filter books by target group and category — data is already fetched, no extra queries needed
-    # STOP at first suitable book
+    # Filter books: batch query has truncated categories, so only filter by target_group here.
+    # Full categories are obtained per-book in scrape_book_details() and checked there.
+    # STOP at first suitable book.
     logging.info("\n🔍 Checking books to find first suitable book for sexy review...")
     selected_book = None
     selected_ean = None
-    
+    book_data = None
+
     for book, ean in new_books:
         url_key = book['url_key']
         logging.info(f"\n📚 Checking: {url_key}")
-        
+
         # Check target_group - must include 'Voksen' (Adult)
         target_groups = book.get('target_group', [])
         if 'Voksen' not in target_groups:
             logging.info(f"  ❌ Skipping: Not for adults (target_group={target_groups})")
             continue
-        
-        # Check categories using pre-fetched data
-        categories = book.get('categories', [])
-        if is_suitable_for_sexy_review(categories):
-            selected_book = book
-            selected_ean = ean
-            logging.info(f"  ✅ Found suitable book: {url_key}")
-            logging.info(f"📖 Categories: {categories}")
-            break
-        else:
+
+        # Get full details including rich categories
+        logging.info(f"  🔍 Fetching details for adult book...")
+        book_data = scrape_book_details(url_key)
+
+        if not book_data or not book_data['title']:
+            logging.error(f"  ❌ Could not extract book details!")
+            continue
+
+        # Check categories from the detail query (rich, not truncated batch data)
+        categories = book_data.get('categories', [])
+        if not is_suitable_for_sexy_review(categories):
             logging.info(f"  ❌ Skipping: Unsuitable categories")
-    
+            continue
+
+        # Found a suitable book!
+        selected_book = book
+        selected_ean = ean
+        logging.info(f"  ✅ Found suitable book: {url_key}")
+        logging.info(f"📖 Categories: {categories}")
+        break
+
     if not selected_book:
         logging.info("\n🛑 No suitable books found for sexy reviews today!")
         logging.info("All available books are in categories that don't fit the flirty 'book daddy' style.")
         logging.info("Skipping post for today - will try again tomorrow.")
         exit(78)  # Exit code 78 means "no suitable books to review"
-    
+
     logging.info(f"\n✅ Selected first suitable book!")
     logging.info(f"📚 URL key: {selected_book['url_key']}")
-    
-    # Get book details (uses proxy if needed)
-    book_data = scrape_book_details(selected_book['url_key'])
-    
-    if not book_data or not book_data['title']:
-        logging.error("Could not extract book details!")
-        return
-    
-    # Generate review
+
+    # Generate review (book_data already fetched in the loop above)
     review = generate_book_review(book_data)
     
     if not review:
