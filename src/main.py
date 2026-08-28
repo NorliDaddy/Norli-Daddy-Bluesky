@@ -28,8 +28,12 @@ API_ENDPOINT = "https://models.inference.ai.azure.com/chat/completions"
 MODEL_NAME = "auto"
 
 # Bluesky Configuration
-BSKY_HANDLE = os.getenv("BSKY_HANDLE")
+BSKY_HANDLE = os.getenv("BSY_HANDLE")
 BSKY_PASSWORD = os.getenv("BSKY_PASSWORD")
+
+# ScraperAPI/ScrapingBee for geo-blocking bypass
+SCRAPER_API_KEY = os.getenv("SCRAPER_API_KEY")
+SCRAPER_API_ENDPOINT = "https://api.scrapingbee.com/v1/"
 
 # URLs
 NORLI_GRAPHQL_API = "https://www.norli.no/graphql"
@@ -147,7 +151,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 def scrape_book_list():
     """Get book list using GraphQL API - no Selenium needed!"""
     logging.info("Fetching book list from Norli GraphQL API")
-    
+
     query = """
     query getCategoryList($filters: CategoryFilterInput) {
       categoryList(filters: $filters) {
@@ -165,49 +169,98 @@ def scrape_book_list():
       }
     }
     """
-    
+
     variables = {
         "filters": {
             "url_key": {"eq": "manedens-nyheter"}
         }
     }
-    
+
     payload = {
         "query": query,
         "variables": variables,
         "operationName": "getCategoryList"
     }
-    
+
     headers = {
         'Content-Type': 'application/json',
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
         'store': 'pwa'
     }
-    
+
     try:
         response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=15)
         response.raise_for_status()
-        
+
         data = response.json()
-        
+
         if 'data' in data and 'categoryList' in data['data']:
             categories = data['data']['categoryList']
             if categories and len(categories) > 0:
                 category = categories[0]
                 products = category.get('products', {}).get('items', [])
-                
+
                 # Return url_keys (we'll work with these instead of full URLs)
                 url_keys = [product.get('url_key') for product in products if product.get('url_key')]
-                
+
                 logging.info(f"Found {len(url_keys)} books from GraphQL API")
                 logging.info(f"Total books in category: {category.get('products', {}).get('total_count', 0)}")
                 return url_keys
-        
+
         logging.error(f"Unexpected API response: {data}")
         return []
-        
+
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 403:
+            logging.warning("GraphQL API returned 403 - geo-blocking detected, trying ScrapingBee fallback...")
+            return scrape_book_list_via_scraper()
+        logging.error(f"HTTP error fetching book list: {e}")
+        return []
     except Exception as e:
         logging.error(f"Error fetching book list from GraphQL: {e}")
+        return []
+
+
+def scrape_book_list_via_scraper():
+    """Fallback: Get book list via ScrapingBee API for geo-blocking bypass"""
+    if not SCRAPER_API_KEY:
+        logging.error("SCRAPER_API_KEY not configured - cannot bypass geo-blocking")
+        return []
+
+    logging.info("Using ScrapingBee fallback for geo-blocking bypass")
+
+    try:
+        response = requests.get(
+            f"{SCRAPER_API_ENDPOINT}",
+            params={
+                'api_key': SCRAPER_API_KEY,
+                'url': NORLI_GRAPHQL_API,
+                'country_code': 'no',  # Norwegian proxy
+                'render_js': False,
+                'transparent_status_code': True,
+            },
+            timeout=30
+        )
+        response.raise_for_status()
+
+        data = response.json()
+        if data.get('success') and data.get('html'):
+            # Parse the GraphQL response from the HTML field
+            inner_data = json.loads(data['html'])
+            if 'data' in inner_data and 'categoryList' in inner_data['data']:
+                categories = inner_data['data']['categoryList']
+                if categories and len(categories) > 0:
+                    category = categories[0]
+                    products = category.get('products', {}).get('items', [])
+                    url_keys = [product.get('url_key') for product in products if product.get('url_key')]
+                    logging.info(f"Found {len(url_keys)} books via ScrapingBee")
+                    return url_keys
+
+        logging.error(f"ScrapingBee response unexpected: {data}")
+        return []
+
+    except Exception as e:
+        logging.error(f"Error using ScrapingBee fallback: {e}")
         return []
 
 
