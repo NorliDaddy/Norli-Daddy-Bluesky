@@ -24,7 +24,8 @@ load_dotenv()
 # API Configuration
 API_KEY = os.getenv("KEY_GITHUB_TOKEN")  # Azure OpenAI via GitHub Models
 API_ENDPOINT = "https://models.inference.ai.azure.com/chat/completions"
-MODEL_NAME = "gpt-4o"
+# Copilot Free/GitHub Models accounts use Auto model selection.
+MODEL_NAME = "auto"
 
 # Bluesky Configuration
 BSKY_HANDLE = os.getenv("BSKY_HANDLE")
