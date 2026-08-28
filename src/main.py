@@ -184,8 +184,11 @@ def scrape_book_list():
 
     headers = {
         'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-        'store': 'pwa'
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'store': 'pwa',
+        'Accept': 'application/json',
+        'Accept-Language': 'nb-NO,no;q=0.9',
+        'Referer': 'https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter'
     }
 
     try:
@@ -200,7 +203,6 @@ def scrape_book_list():
                 category = categories[0]
                 products = category.get('products', {}).get('items', [])
 
-                # Return url_keys (we'll work with these instead of full URLs)
                 url_keys = [product.get('url_key') for product in products if product.get('url_key')]
 
                 logging.info(f"Found {len(url_keys)} books from GraphQL API")
@@ -212,8 +214,8 @@ def scrape_book_list():
 
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 403:
-            logging.warning("GraphQL API returned 403 - geo-blocking detected, trying ScrapingBee fallback...")
-            return scrape_book_list_via_scraper()
+            logging.warning("GraphQL API returned 403 - geo-blocking detected, trying free proxy fallback...")
+            return scrape_book_list_with_free_proxy(payload, headers)
         logging.error(f"HTTP error fetching book list: {e}")
         return []
     except Exception as e:
@@ -221,46 +223,55 @@ def scrape_book_list():
         return []
 
 
-def scrape_book_list_via_scraper():
-    """Fallback: Get book list via ScrapingBee API for geo-blocking bypass"""
-    if not SCRAPER_API_KEY:
-        logging.error("SCRAPER_API_KEY not configured - cannot bypass geo-blocking")
-        return []
-
-    logging.info("Using ScrapingBee fallback for geo-blocking bypass")
+def scrape_book_list_with_free_proxy(payload, headers):
+    """Fallback: Get book list via free proxy from ProxyScrape API"""
+    logging.info("Using free proxy from ProxyScrape to bypass geo-blocking")
 
     try:
-        response = requests.get(
-            f"{SCRAPER_API_ENDPOINT}",
-            params={
-                'api_key': SCRAPER_API_KEY,
-                'url': NORLI_GRAPHQL_API,
-                'country_code': 'no',  # Norwegian proxy
-                'render_js': False,
-                'transparent_status_code': True,
-            },
-            timeout=30
-        )
-        response.raise_for_status()
+        # Get a free proxy from ProxyScrape (no API key required)
+        proxy_response = requests.get("https://api.proxyscrape.com/v2/free/free-proxies",
+                                     params={'country': 'NO', 'timeout': 5000, 'format': 'json'},
+                                     timeout=10)
+        proxy_response.raise_for_status()
+        proxies = proxy_response.json()
 
-        data = response.json()
-        if data.get('success') and data.get('html'):
-            # Parse the GraphQL response from the HTML field
-            inner_data = json.loads(data['html'])
-            if 'data' in inner_data and 'categoryList' in inner_data['data']:
-                categories = inner_data['data']['categoryList']
-                if categories and len(categories) > 0:
-                    category = categories[0]
-                    products = category.get('products', {}).get('items', [])
-                    url_keys = [product.get('url_key') for product in products if product.get('url_key')]
-                    logging.info(f"Found {len(url_keys)} books via ScrapingBee")
-                    return url_keys
+        if not proxies:
+            logging.error("No proxies returned from ProxyScrape")
+            return []
 
-        logging.error(f"ScrapingBee response unexpected: {data}")
+        # Try each proxy until one works
+        for proxy in proxies[:5]:  # Try first 5 proxies
+            proxy_url = f"http://{proxy.get('ip')}:{proxy.get('port')}"
+            logging.info(f"Trying proxy: {proxy_url}")
+
+            try:
+                response = requests.post(
+                    NORLI_GRAPHQL_API,
+                    json=payload,
+                    headers=headers,
+                    proxies={'http': proxy_url, 'https': proxy_url},
+                    timeout=30
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    if 'data' in data and 'categoryList' in data['data']:
+                        categories = data['data']['categoryList']
+                        if categories and len(categories) > 0:
+                            products = categories[0].get('products', {}).get('items', [])
+                            url_keys = [p.get('url_key') for p in products if p.get('url_key')]
+                            logging.info(f"Found {len(url_keys)} books via free proxy")
+                            return url_keys
+
+                logging.warning(f"Proxy {proxy_url} failed with status {response.status_code}")
+            except Exception as e:
+                logging.debug(f"Proxy {proxy_url} failed: {e}")
+
+        logging.error("All free proxies failed")
         return []
 
     except Exception as e:
-        logging.error(f"Error using ScrapingBee fallback: {e}")
+        logging.error(f"Error using free proxy fallback: {e}")
         return []
 
 
