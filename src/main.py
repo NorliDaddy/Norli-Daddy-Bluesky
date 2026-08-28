@@ -31,10 +31,6 @@ MODEL_NAME = "auto"
 BSKY_HANDLE = os.getenv("BSY_HANDLE")
 BSKY_PASSWORD = os.getenv("BSKY_PASSWORD")
 
-# ScraperAPI/ScrapingBee for geo-blocking bypass
-SCRAPER_API_KEY = os.getenv("SCRAPER_API_KEY")
-SCRAPER_API_ENDPOINT = "https://api.scrapingbee.com/v1/"
-
 # URLs
 NORLI_GRAPHQL_API = "https://www.norli.no/graphql"
 
