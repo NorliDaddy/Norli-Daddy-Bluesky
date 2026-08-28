@@ -33,6 +33,9 @@ jobs:
           KEY_GITHUB_TOKEN: ${{ secrets.KEY_GITHUB_TOKEN }}
           BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
           BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD }}
+          # Use Norwegian proxy to bypass geo-blocking
+          https_proxy: ${{ secrets.HTTPS_PROXY }}
+          http_proxy: ${{ secrets.HTTPS_PROXY }}
         run: |
           python src/main.py
       
