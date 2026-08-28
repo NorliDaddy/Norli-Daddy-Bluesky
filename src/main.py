@@ -37,6 +37,7 @@ NORLI_GRAPHQL_API = "https://www.norli.no/graphql"
 # Global proxy cache for reuse across requests
 _proxy_cache = None
 _proxy_url = None
+_proxy_consecutive_failures = 0
 
 # Category filtering - Norli URL path segments that indicate suitable books
 SUITABLE_CATEGORIES = [
@@ -223,12 +224,15 @@ def scrape_book_list():
         return []
 
 
-def get_working_proxy():
+def get_working_proxy(force_refresh=False):
     """Get a working European proxy for bypassing geo-blocking"""
-    global _proxy_cache, _proxy_url
+    global _proxy_cache, _proxy_url, _proxy_consecutive_failures
 
-    if _proxy_cache:
+    if _proxy_cache and not force_refresh:
         return _proxy_cache
+
+    # Reset consecutive failure counter on fresh lookup
+    _proxy_consecutive_failures = 0
 
     try:
         proxies_response = requests.get(
@@ -243,7 +247,7 @@ def get_working_proxy():
             european_proxies = all_proxies[:5]
 
         # Try to find a working proxy
-        for proxy in european_proxies[:5]:
+        for proxy in european_proxies[:10]:  # Try more proxies than before
             protocol = proxy.get('protocol', 'http')
             host = proxy.get('host')
             port = proxy.get('port')
@@ -257,15 +261,30 @@ def get_working_proxy():
                 if response.status_code == 200:
                     _proxy_cache = proxy_url
                     _proxy_url = proxy_url
+                    _proxy_consecutive_failures = 0  # Reset on success
                     logging.info(f"✅ Found working proxy: {proxy_url}")
                     return proxy_url
             except:
                 continue
-
+        # Failed to find any working proxy
+        logging.warning("⚠️ No working European proxy found in proxy list")
+        return None
     except Exception as e:
-        logging.debug(f"Failed to get proxy: {e}")
+        logging.debug(f"Failed to get proxy list: {e}")
+        return None
 
-    return None
+
+def _invalidate_proxy():
+    """Mark current proxy as dead and increment failure counter.
+    After 3 consecutive failures, gives up on proxy for this run."""
+    global _proxy_cache, _proxy_url, _proxy_consecutive_failures
+    logging.warning(f"♻️  Invalidating dead proxy {_proxy_url}, failure #{_proxy_consecutive_failures + 1}")
+    _proxy_cache = None
+    _proxy_url = None
+    _proxy_consecutive_failures += 1
+    if _proxy_consecutive_failures >= 3:
+        logging.error("❌ Too many proxy failures (3 consecutive) — giving up on proxy for this run")
+        _proxy_url = ""  # Empty string = no proxy, will fail fast with direct connection
 
 
 def scrape_book_list_with_free_proxy(payload, headers):
@@ -340,7 +359,20 @@ def check_target_group(url_key):
 
         proxies = {'http': _proxy_url, 'https': _proxy_url} if _proxy_url else None
 
-        response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=10, proxies=proxies)
+        try:
+            response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=10, proxies=proxies)
+        except (requests.exceptions.ProxyError, requests.exceptions.ConnectTimeout) as e:
+            if _proxy_url:
+                _invalidate_proxy()
+                new_proxies = {'http': _proxy_url, 'https': _proxy_url} if _proxy_url else None
+                logging.info(f"🔄 Retrying {url_key} after proxy failure...")
+                try:
+                    response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=10, proxies=new_proxies)
+                except Exception as e2:
+                    logging.warning(f"Error checking target_group for {url_key}: {e2}")
+                    return False
+            else:
+                raise
         response.raise_for_status()
 
         data = response.json()
@@ -421,7 +453,20 @@ def get_book_categories_from_norli(url_key):
 
         proxies = {'http': _proxy_url, 'https': _proxy_url} if _proxy_url else None
 
-        response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=10, proxies=proxies)
+        try:
+            response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=10, proxies=proxies)
+        except (requests.exceptions.ProxyError, requests.exceptions.ConnectTimeout) as e:
+            if _proxy_url:
+                _invalidate_proxy()
+                new_proxies = {'http': _proxy_url, 'https': _proxy_url} if _proxy_url else None
+                logging.info(f"🔄 Retrying categories for {url_key} after proxy failure...")
+                try:
+                    response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=10, proxies=new_proxies)
+                except Exception as e2:
+                    logging.warning(f"Error fetching categories for {url_key}: {e2}")
+                    return list(set(categories))
+            else:
+                raise
         response.raise_for_status()
 
         data = response.json()
