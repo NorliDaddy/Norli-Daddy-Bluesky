@@ -30,7 +30,7 @@ load_dotenv()
 COPILOT_MODEL = "auto"
 
 # Bluesky Configuration
-BSKY_HANDLE = os.getenv("BSY_HANDLE")
+BSKY_HANDLE = os.getenv("BSKY_HANDLE")
 BSKY_PASSWORD = os.getenv("BSKY_PASSWORD")
 
 # URLs
