@@ -224,25 +224,35 @@ def scrape_book_list():
 
 
 def scrape_book_list_with_free_proxy(payload, headers):
-    """Fallback: Get book list via free proxy from ProxyScrape API"""
-    logging.info("Using free proxy from ProxyScrape to bypass geo-blocking")
+    """Fallback: Get book list via free proxy from monosans/proxy-list GitHub repo"""
+    logging.info("Using free proxy from monosans/proxy-list to bypass geo-blocking")
 
     try:
-        # Get a free proxy from ProxyScrape (no API key required)
-        proxy_response = requests.get("https://api.proxyscrape.com/v2/free/free-proxies",
-                                     params={'country': 'NO', 'timeout': 5000, 'format': 'json'},
-                                     timeout=10)
-        proxy_response.raise_for_status()
-        proxies = proxy_response.json()
+        # Get proxy list from GitHub (no API key required, updated hourly)
+        proxies_response = requests.get(
+            "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies.json",
+            timeout=10
+        )
+        proxies_response.raise_for_status()
+        all_proxies = proxies_response.json()
 
-        if not proxies:
-            logging.error("No proxies returned from ProxyScrape")
-            return []
+        # Filter for Norway or European proxies
+        european_proxies = [p for p in all_proxies if p.get('geolocation', {}).get('country', {}).get('iso_code', '') in ['NO', 'SE', 'DK', 'FI', 'DE', 'NL']]
+        if not european_proxies:
+            # Fallback to any proxy if no European ones
+            european_proxies = all_proxies[:10]
 
         # Try each proxy until one works
-        for proxy in proxies[:5]:  # Try first 5 proxies
-            proxy_url = f"http://{proxy.get('ip')}:{proxy.get('port')}"
-            logging.info(f"Trying proxy: {proxy_url}")
+        for proxy in european_proxies[:10]:
+            protocol = proxy.get('protocol', 'http')
+            host = proxy.get('host')
+            port = proxy.get('port')
+
+            if not host or not port:
+                continue
+
+            proxy_url = f"{protocol}://{host}:{port}"
+            logging.info(f"Trying proxy: {proxy_url} (country: {proxy.get('geolocation', {}).get('country', {}).get('iso_code', 'unknown')})")
 
             try:
                 response = requests.post(
