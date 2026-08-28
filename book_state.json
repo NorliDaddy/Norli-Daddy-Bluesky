@@ -551,10 +551,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/pocket/odysseen-9788234728686",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3moigkkheca25",
       "reviewed_at": "2026-06-17T13:35:15.047098+00:00"
+    },
+    {
+      "ean": "9788203464041",
+      "title": "Mager tr\u00f8st",
+      "author": "Genberg, Ia",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/mager-trost-9788203464041",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mu5ck7uxqv2v",
+      "reviewed_at": "2026-08-28T11:55:21.829162+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 69,
-    "total_posted": 69
+    "total_reviews": 70,
+    "total_posted": 70
   }
 }
