@@ -458,6 +458,20 @@ def scrape_book_details(url_key):
                 raise
         response.raise_for_status()
         
+        # Handle 403 from dead proxy / geo-block — same fallback as scrape_book_list
+        if response.status_code == 403:
+            logging.warning("GraphQL API returned 403 on book details - geo-blocking/proxy died, trying fresh proxy...")
+            _invalidate_proxy()
+            fresh_proxy = get_working_proxy(force_refresh=True)
+            new_proxies = {'http': fresh_proxy, 'https': fresh_proxy} if fresh_proxy else None
+            if new_proxies:
+                logging.info(f"🔄 Retrying with fresh proxy: {fresh_proxy}")
+                response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=15, proxies=new_proxies)
+                response.raise_for_status()
+            else:
+                logging.error("No fresh proxy available for book details")
+                return None
+        
         data = response.json()
         
         if 'data' not in data or 'products' not in data['data']:
@@ -572,84 +586,7 @@ def scrape_book_details(url_key):
                             image_url = parts[0] + '/media/catalog/product/' + after_cache
             logging.info(f"Transformed image URL: {image_url}")
         
-        # Priority 3: Try scraping the page
-        if not image_url:
-            try:
-                page_response = requests.get(book_url, headers=headers, timeout=10)
-                if page_response.status_code == 200:
-                    soup = BeautifulSoup(page_response.text, 'html.parser')
-                    
-                    # Look for book cover images with Norli-specific patterns
-                    image_selectors = [
-                        'img[alt="image-product"]',
-                        '.carouselGallery-image-gHz',
-                        'img[src*="/media/catalog/product/"]',
-                    ]
-                    
-                    for selector in image_selectors:
-                        img_elements = soup.select(selector)
-                        for img in img_elements:
-                            src = img.get('src', '')
-                            if src and '/media/catalog/product/' in src and ('width=728' in src or 'width=960' in src):
-                                if 'width=728' in src:
-                                    image_url = src.replace('width=728', 'width=960')
-                                else:
-                                    image_url = src
-                                # Transform to www.norli.no format
-                                image_url = image_url.replace('checkout.norli.no', 'www.norli.no')
-                                if '/cache/' in image_url:
-                                    parts = image_url.split('/media/catalog/product/')
-                                    if len(parts) == 2:
-                                        after_product = parts[1]
-                                        if after_product.startswith('cache/'):
-                                            remaining_parts = after_product.split('/')
-                                            if len(remaining_parts) > 2:
-                                                after_cache = '/'.join(remaining_parts[2:])
-                                                image_url = parts[0] + '/media/catalog/product/' + after_cache
-                                logging.info(f"Found image from page scraping: {image_url}")
-                                break
-                        if image_url:
-                            break
-            except Exception as e:
-                logging.warning(f"Could not scrape image from page: {e}")
-        
-        # Set the image URL in book_data
         book_data['image_url'] = image_url
-        
-        # Fetch page for author/year extraction if not already fetched
-        if not page_response:
-            try:
-                page_response = requests.get(book_url, headers=headers, timeout=10)
-            except Exception as e:
-                logging.warning(f"Could not fetch page for author/year extraction: {e}")
-        
-        # Continue with author/year scraping from page
-        if page_response and page_response.status_code == 200:
-            soup = BeautifulSoup(page_response.text, 'html.parser')
-            
-            # Extract author
-            author_selectors = [
-                '.productFullDetailNorli-authors-cdP a',
-                'a[href*="/forfatter/"]',
-                '.author',
-                'span[itemprop="author"]'
-            ]
-            for selector in author_selectors:
-                element = soup.select_one(selector)
-                if element:
-                    book_data['author'] = element.get_text(strip=True)
-                    if book_data['author']:
-                        break
-            
-            # Extract year from page text
-            if not book_data['year']:
-                text = soup.get_text()
-                year_match = re.search(r'\b(202[0-9]|201[0-9])\b', text)
-                if year_match:
-                    book_data['year'] = year_match.group(1)
-        else:
-            logging.warning(f"Could not fetch page for author/year extraction")
-        
         logging.info(f"Extracted: {book_data['title']}" + (f" by {book_data['author']}" if book_data['author'] else ""))
         return book_data
         
