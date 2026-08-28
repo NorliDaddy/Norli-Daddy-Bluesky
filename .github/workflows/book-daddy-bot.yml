@@ -8,8 +8,7 @@ on:
 
 jobs:
   post-book-review:
-    # Use Norway East runner to bypass geo-blocking
-    runs-on: ubuntu-latest-ephemeral-norwayeast-1
+    runs-on: ubuntu-latest
     
     steps:
       - name: Checkout repository
