@@ -281,7 +281,31 @@ def scrape_book_list_with_free_proxy(payload, headers):
         logging.error("No working proxy found")
         return []
 
-    proxies = {'http': working_proxy, 'https': working_proxy}
+    try:
+        response = requests.post(
+            NORLI_GRAPHQL_API,
+            json=payload,
+            headers=headers,
+            proxies={'http': working_proxy, 'https': working_proxy},
+            timeout=30
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            if 'data' in data and 'categoryList' in data['data']:
+                categories = data['data']['categoryList']
+                if categories and len(categories) > 0:
+                    products = categories[0].get('products', {}).get('items', [])
+                    url_keys = [p.get('url_key') for p in products if p.get('url_key')]
+                    logging.info(f"Found {len(url_keys)} books via free proxy")
+                    return url_keys
+
+        logging.warning(f"Proxy request failed with status {response.status_code}")
+        return []
+
+    except Exception as e:
+        logging.error(f"Error using free proxy fallback: {e}")
+        return []
 
 
 def check_target_group(url_key):
@@ -367,7 +391,7 @@ def check_target_group(url_key):
 def get_book_categories_from_norli(url_key):
     """Fetch book categories from Norli's GraphQL API using url_key"""
     categories = []
-    
+
     try:
         query = """
         query getProductCategories($urlKey: String!) {
@@ -384,26 +408,28 @@ def get_book_categories_from_norli(url_key):
           }
         }
         """
-        
+
         variables = {"urlKey": url_key}
-        
+
         payload = {
             "query": query,
             "variables": variables,
             "operationName": "getProductCategories"
         }
-        
+
         headers = {
             'Content-Type': 'application/json',
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
             'store': 'pwa'
         }
-        
-        response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=10)
+
+        proxies = {'http': _proxy_url, 'https': _proxy_url} if _proxy_url else None
+
+        response = requests.post(NORLI_GRAPHQL_API, json=payload, headers=headers, timeout=10, proxies=proxies)
         response.raise_for_status()
-        
+
         data = response.json()
-        
+
         if 'data' in data and 'products' in data['data']:
             items = data['data']['products'].get('items', [])
             if items:
@@ -413,20 +439,20 @@ def get_book_categories_from_norli(url_key):
                     for cat in norli_categories:
                         cat_name = cat.get('name', '').lower()
                         cat_path = cat.get('url_path', '').lower()
-                        
+
                         if cat_name:
                             categories.append(cat_name)
-                        
+
                         # Extract path segments
                         if cat_path:
                             path_parts = [p for p in cat_path.split('/') if p]
                             categories.extend(path_parts)
-                    
+
                     logging.info(f"Categories for {url_key}: {list(set(categories))}")
-        
+
     except Exception as e:
         logging.warning(f"Error fetching categories for {url_key}: {e}")
-    
+
     return list(set(categories))
 
 
