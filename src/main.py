@@ -27,7 +27,7 @@ load_dotenv()
 # Uses copilot CLI with Claude Haiku 4.5 (fast, free tier)
 # Install: npm install -g @github/copilot
 # Auth: GH_TOKEN or GITHUB_TOKEN env var
-COPILOT_MODEL = "claude-3-5-haiku"
+COPILOT_MODEL = "claude-haiku-4.5"
 
 # Bluesky Configuration
 BSKY_HANDLE = os.getenv("BSY_HANDLE")
