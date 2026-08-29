@@ -567,10 +567,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/topp-10-romaner/kyssemerket-9788202905385",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mu6b3b7tzb25",
       "reviewed_at": "2026-08-28T21:01:45.733768+00:00"
+    },
+    {
+      "ean": "9788202888428",
+      "title": "Gris",
+      "author": "Strassegger, Peter F.",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/gris-9788202888428",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mua4o25hnr2w",
+      "reviewed_at": "2026-08-29T14:48:06.398751+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 71,
-    "total_posted": 71
+    "total_reviews": 72,
+    "total_posted": 72
   }
 }
