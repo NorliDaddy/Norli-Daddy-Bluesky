@@ -607,10 +607,18 @@
       "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter/nyheter-og-bestselgere-skjonnlitteratur/kan-du-hente-meg-9788284680507",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mummbvx6ex2r",
       "reviewed_at": "2026-09-03T13:59:36.409543+00:00"
+    },
+    {
+      "ean": "9788205628021",
+      "title": "Den frosne kvinnen",
+      "author": "Ernaux, Annie",
+      "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter/nyheter-og-bestselgere-skjonnlitteratur/den-frosne-kvinnen-9788205628021",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3murkbgx3sq2o",
+      "reviewed_at": "2026-09-05T13:06:51.655589+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 76,
-    "total_posted": 76
+    "total_reviews": 77,
+    "total_posted": 77
   }
 }
