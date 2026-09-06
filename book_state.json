@@ -615,10 +615,18 @@
       "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/manedens-nyheter/nyheter-og-bestselgere-skjonnlitteratur/den-frosne-kvinnen-9788205628021",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3murkbgx3sq2o",
       "reviewed_at": "2026-09-05T13:06:51.655589+00:00"
+    },
+    {
+      "ean": "9788205621343",
+      "title": "Besettelse",
+      "author": "Wassmo, Herbj\u00f8rg",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/besettelse-9788205621343",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3muu3cptqjp26",
+      "reviewed_at": "2026-09-06T13:17:07.081241+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 77,
-    "total_posted": 77
+    "total_reviews": 78,
+    "total_posted": 78
   }
 }
