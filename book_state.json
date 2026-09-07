@@ -623,10 +623,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/besettelse-9788205621343",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3muu3cptqjp26",
       "reviewed_at": "2026-09-06T13:17:07.081241+00:00"
+    },
+    {
+      "ean": "9788203455384",
+      "title": "Nordstern",
+      "author": "Tilrem, Martin",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/nordstern-9788203455384",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3muwsshl7p52c",
+      "reviewed_at": "2026-09-07T15:22:51.494213+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 78,
-    "total_posted": 78
+    "total_reviews": 79,
+    "total_posted": 79
   }
 }
