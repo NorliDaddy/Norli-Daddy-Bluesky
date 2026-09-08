@@ -631,10 +631,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/nordstern-9788203455384",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3muwsshl7p52c",
       "reviewed_at": "2026-09-07T15:22:51.494213+00:00"
+    },
+    {
+      "ean": "9788203463143",
+      "title": "Den julen du lyste",
+      "author": "Lunde, Maja",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/den-julen-du-lyste-9788203463143",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3muz6lrpsce25",
+      "reviewed_at": "2026-09-08T13:59:11.624223+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 79,
-    "total_posted": 79
+    "total_reviews": 80,
+    "total_posted": 80
   }
 }
