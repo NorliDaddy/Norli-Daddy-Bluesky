@@ -655,10 +655,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/slottet-9788202921002",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mxe4n5npsv2m",
       "reviewed_at": "2026-10-08T09:13:50.517038+00:00"
+    },
+    {
+      "ean": "9788202918842",
+      "title": "Orlando",
+      "author": "Whittaker, Harry",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/orlando-9788202918842",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mxewxl74q62s",
+      "reviewed_at": "2026-10-08T17:04:57.704607+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 82,
-    "total_posted": 82
+    "total_reviews": 83,
+    "total_posted": 83
   }
 }
