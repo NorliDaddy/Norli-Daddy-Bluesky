@@ -1015,6 +1015,26 @@ def post_to_bluesky(review_text, book_data=None):
         if book_data and book_data.get('image_url'):
             try:
                 img_resp = requests.get(book_data['image_url'], timeout=30)
+                # Resize/compress if image exceeds Bluesky 2MB limit
+                if img_resp.status_code == 200:
+                    img_bytes = img_resp.content
+                    if len(img_bytes) > 2_000_000:
+                        from PIL import Image
+                        import io
+                        img = Image.open(io.BytesIO(img_bytes))
+                        # Resize preserving aspect ratio, max dimension 1200px
+                        max_dim = 1200
+                        ratio = min(max_dim / img.width, max_dim / img.height, 1)
+                        new_size = (int(img.width * ratio), int(img.height * ratio))
+                        if new_size != img.size:
+                            img = img.resize(new_size, Image.LANCZOS)
+                        # Re-encode to JPEG with quality 85 (or PNG if original not JPEG)
+                        out = io.BytesIO()
+                        fmt = 'JPEG' if img.mode in ('RGB', 'L') else 'PNG'
+                        img.save(out, format=fmt, quality=85, optimize=True)
+                        img_bytes = out.getvalue()
+                    # Use possibly resized bytes for upload
+                    blob = client.upload_blob(img_bytes).blob
                 if img_resp.status_code == 200:
                     blob = client.upload_blob(img_resp.content).blob
                     embed = models.AppBskyEmbedImages.Main(
