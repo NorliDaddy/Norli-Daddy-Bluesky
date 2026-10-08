@@ -639,10 +639,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/den-julen-du-lyste-9788203463143",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3muz6lrpsce25",
       "reviewed_at": "2026-09-08T13:59:11.624223+00:00"
+    },
+    {
+      "ean": "9788293910398",
+      "title": "Sterkere enn frykt",
+      "author": "Samartin, Cecilia",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/sterkere-enn-frykt-9788293910398",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mxe3gui3cd2y",
+      "reviewed_at": "2026-10-08T08:52:25.221507+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 80,
-    "total_posted": 80
+    "total_reviews": 81,
+    "total_posted": 81
   }
 }
