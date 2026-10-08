@@ -1033,10 +1033,7 @@ def post_to_bluesky(review_text, book_data=None):
                         fmt = 'JPEG' if img.mode in ('RGB', 'L') else 'PNG'
                         img.save(out, format=fmt, quality=85, optimize=True)
                         img_bytes = out.getvalue()
-                    # Use possibly resized bytes for upload
                     blob = client.upload_blob(img_bytes).blob
-                if img_resp.status_code == 200:
-                    blob = client.upload_blob(img_resp.content).blob
                     embed = models.AppBskyEmbedImages.Main(
                         images=[
                             models.AppBskyEmbedImages.Image(
