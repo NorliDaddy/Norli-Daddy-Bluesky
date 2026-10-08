@@ -647,10 +647,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/sterkere-enn-frykt-9788293910398",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mxe3gui3cd2y",
       "reviewed_at": "2026-10-08T08:52:25.221507+00:00"
+    },
+    {
+      "ean": "9788202921002",
+      "title": "Slottet",
+      "author": "Bomann-Larsen, Tor",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/slottet-9788202921002",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mxe4n5npsv2m",
+      "reviewed_at": "2026-10-08T09:13:50.517038+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 81,
-    "total_posted": 81
+    "total_reviews": 82,
+    "total_posted": 82
   }
 }
