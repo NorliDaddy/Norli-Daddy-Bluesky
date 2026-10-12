@@ -671,10 +671,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/takk-for-alt-9788203463716",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mxhg7hwwxy2s",
       "reviewed_at": "2026-10-09T16:43:08.541781+00:00"
+    },
+    {
+      "ean": "9788203463082",
+      "title": "Borgen",
+      "author": "N\u00f8dtvedt, Erlend O.",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/borgen-9788203463082",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mxpay4eiw22x",
+      "reviewed_at": "2026-10-12T19:30:50.655166+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 84,
-    "total_posted": 84
+    "total_reviews": 85,
+    "total_posted": 85
   }
 }
