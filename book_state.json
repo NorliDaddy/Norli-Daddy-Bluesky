@@ -687,10 +687,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/jeg-kommer-hjem-9788249531905",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mxtrzdbgyu2q",
       "reviewed_at": "2026-10-14T14:46:24.448393+00:00"
+    },
+    {
+      "ean": "9788203462566",
+      "title": "Utyske",
+      "author": "Viken, Guri Ids\u00f8",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/utyske-9788203462566",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mxyropzc2i2u",
+      "reviewed_at": "2026-10-16T14:23:46.693498+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 86,
-    "total_posted": 86
+    "total_reviews": 87,
+    "total_posted": 87
   }
 }
