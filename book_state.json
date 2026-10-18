@@ -695,10 +695,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/utyske-9788203462566",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mxyropzc2i2u",
       "reviewed_at": "2026-10-16T14:23:46.693498+00:00"
+    },
+    {
+      "ean": "9788205625457",
+      "title": "Et \u00f8ye lukket",
+      "author": "Enger, Cecilie",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/topp-10-romaner/et-oye-lukket-9788205625457",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3my5qkm2pvs2y",
+      "reviewed_at": "2026-10-18T13:46:53.330670+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 87,
-    "total_posted": 87
+    "total_reviews": 88,
+    "total_posted": 88
   }
 }
