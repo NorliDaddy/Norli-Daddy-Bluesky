@@ -727,10 +727,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/vinter-vinter-vinter-var-9788249531882",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mymtajqizj25",
       "reviewed_at": "2026-10-24T13:44:52.594757+00:00"
+    },
+    {
+      "ean": "9788203462658",
+      "title": "Undo(me)",
+      "author": "Graasvold, Joakim Fink",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/undo-me-9788203462658",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3myx5ubcmxo22",
+      "reviewed_at": "2026-10-28T16:21:29.826087+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 91,
-    "total_posted": 91
+    "total_reviews": 92,
+    "total_posted": 92
   }
 }
