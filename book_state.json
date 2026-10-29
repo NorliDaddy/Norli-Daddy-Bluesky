@@ -735,10 +735,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/undo-me-9788203462658",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3myx5ubcmxo22",
       "reviewed_at": "2026-10-28T16:21:29.826087+00:00"
+    },
+    {
+      "ean": "9788234726194",
+      "title": "Dragsug",
+      "author": "Larssen, Vetle Lid",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/topp-10-romaner/dragsug-9788234726194",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3myzoxlfgo62n",
+      "reviewed_at": "2026-10-29T16:32:54.429423+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 92,
-    "total_posted": 92
+    "total_reviews": 93,
+    "total_posted": 93
   }
 }
