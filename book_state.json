@@ -743,10 +743,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/topp-10-romaner/dragsug-9788234726194",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3myzoxlfgo62n",
       "reviewed_at": "2026-10-29T16:32:54.429423+00:00"
+    },
+    {
+      "ean": "9788253045924",
+      "title": "Koda",
+      "author": "West\u00f6, Kjell",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/koda-9788253045924",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mzivjucfgo22",
+      "reviewed_at": "2026-11-04T17:40:26.074899+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 93,
-    "total_posted": 93
+    "total_reviews": 94,
+    "total_posted": 94
   }
 }
