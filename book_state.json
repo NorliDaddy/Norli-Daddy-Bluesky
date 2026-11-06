@@ -751,10 +751,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/koda-9788253045924",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mzivjucfgo22",
       "reviewed_at": "2026-11-04T17:40:26.074899+00:00"
+    },
+    {
+      "ean": "9788241968600",
+      "title": "Ragnarok",
+      "author": "Gull\u00f8v, Tonny",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/ragnarok-9788241968600",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mznuddkfuc2m",
+      "reviewed_at": "2026-11-06T17:02:12.155420+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 94,
-    "total_posted": 94
+    "total_reviews": 95,
+    "total_posted": 95
   }
 }
