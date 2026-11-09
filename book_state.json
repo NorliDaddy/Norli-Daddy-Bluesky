@@ -759,10 +759,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/ragnarok-9788241968600",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mznuddkfuc2m",
       "reviewed_at": "2026-11-06T17:02:12.155420+00:00"
+    },
+    {
+      "ean": "9788234727153",
+      "title": "Alkymert",
+      "author": "Yu, SenLin",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/alkymert-9788234727153",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mzvqniuvn523",
+      "reviewed_at": "2026-11-09T20:17:36.509599+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 95,
-    "total_posted": 95
+    "total_reviews": 96,
+    "total_posted": 96
   }
 }
