@@ -767,10 +767,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/alkymert-9788234727153",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3mzvqniuvn523",
       "reviewed_at": "2026-11-09T20:17:36.509599+00:00"
+    },
+    {
+      "ean": "9788249531899",
+      "title": "Underjordisk",
+      "author": "Knausgaard, Karl Ove",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/underjordisk-9788249531899",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3n27ivujuew2p",
+      "reviewed_at": "2026-11-13T17:25:44.256892+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 96,
-    "total_posted": 96
+    "total_reviews": 97,
+    "total_posted": 97
   }
 }
