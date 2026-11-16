@@ -775,10 +775,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/underjordisk-9788249531899",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3n27ivujuew2p",
       "reviewed_at": "2026-11-13T17:25:44.256892+00:00"
+    },
+    {
+      "ean": "9788202923150",
+      "title": "Eppendorf-notatene",
+      "author": "Ambj\u00f8rnsen, Ingvar",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/eppendorf-notatene-litteraer-dagbok-9788202923150",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3n2hcyh4hth2f",
+      "reviewed_at": "2026-11-16T20:01:06.433660+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 97,
-    "total_posted": 97
+    "total_reviews": 98,
+    "total_posted": 98
   }
 }
