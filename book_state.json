@@ -783,10 +783,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/eppendorf-notatene-litteraer-dagbok-9788202923150",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3n2hcyh4hth2f",
       "reviewed_at": "2026-11-16T20:01:06.433660+00:00"
+    },
+    {
+      "ean": "9788205492189",
+      "title": "Den siste valsen",
+      "author": "Carmona-Alvarez, Pedro",
+      "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/litteraturpriser/brageprisen/den-siste-valsen-9788205492189",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3n2oqbv4cax2f",
+      "reviewed_at": "2026-11-19T18:47:39.628131+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 98,
-    "total_posted": 98
+    "total_reviews": 99,
+    "total_posted": 99
   }
 }
