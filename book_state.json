@@ -791,10 +791,18 @@
       "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/litteraturpriser/brageprisen/den-siste-valsen-9788205492189",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3n2oqbv4cax2f",
       "reviewed_at": "2026-11-19T18:47:39.628131+00:00"
+    },
+    {
+      "ean": "9788202919122",
+      "title": "Den siste ulven",
+      "author": "Krasznahorkai, L\u00e1szl\u00f3",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/den-siste-ulven-9788202919122",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3n2w5di7yss25",
+      "reviewed_at": "2026-11-22T17:29:50.048435+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 99,
-    "total_posted": 99
+    "total_reviews": 100,
+    "total_posted": 100
   }
 }
