@@ -799,10 +799,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/den-siste-ulven-9788202919122",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3n2w5di7yss25",
       "reviewed_at": "2026-11-22T17:29:50.048435+00:00"
+    },
+    {
+      "ean": "9788202898601",
+      "title": "Villa Lupin",
+      "author": "Lien, Merete",
+      "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/kritikerroste-boker/terningkast-5/villa-lupin-9788202898601",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3n2z4itru3o2n",
+      "reviewed_at": "2026-11-23T21:52:55.567659+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 100,
-    "total_posted": 100
+    "total_reviews": 101,
+    "total_posted": 101
   }
 }
