@@ -807,10 +807,18 @@
       "norli_url": "https://www.norli.no/boker/aktuelt-og-anbefalt/kritikerroste-boker/terningkast-5/villa-lupin-9788202898601",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3n2z4itru3o2n",
       "reviewed_at": "2026-11-23T21:52:55.567659+00:00"
+    },
+    {
+      "ean": "9788248943792",
+      "title": "Den norske datteren",
+      "author": "Lane, Soraya",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/den-norske-datteren-9788248943792",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3n33i4kmjiz2p",
+      "reviewed_at": "2026-11-24T20:26:07.577381+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 101,
-    "total_posted": 101
+    "total_reviews": 102,
+    "total_posted": 102
   }
 }
