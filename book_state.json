@@ -815,10 +815,18 @@
       "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/den-norske-datteren-9788248943792",
       "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3n33i4kmjiz2p",
       "reviewed_at": "2026-11-24T20:26:07.577381+00:00"
+    },
+    {
+      "ean": "9788241968846",
+      "title": "Kall meg s\u00f8ster",
+      "author": "Nordstr\u00f6m, Malin",
+      "norli_url": "https://www.norli.no/boker/skjonnlitteratur/romaner/nye-romaner/kall-meg-soster-9788241968846",
+      "bluesky_post": "https://bsky.app/profile/norlidaddy.bsky.social/post/3n35w2gpbnx2n",
+      "reviewed_at": "2026-11-25T19:40:48.350965+00:00"
     }
   ],
   "stats": {
-    "total_reviews": 102,
-    "total_posted": 102
+    "total_reviews": 103,
+    "total_posted": 103
   }
 }
